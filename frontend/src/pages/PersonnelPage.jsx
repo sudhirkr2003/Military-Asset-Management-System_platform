@@ -476,7 +476,7 @@ export const PersonnelPage = () => {
               <th>Assigned Base</th>
               <th>Official Email</th>
               <th>Operational Status</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
+              <th style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -515,7 +515,7 @@ export const PersonnelPage = () => {
                       {p.status || 'ACTIVE'}
                     </b>
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'inline-flex', gap: '6px' }}>
                       <button
                         title="Edit Personnel"
@@ -524,16 +524,15 @@ export const PersonnelPage = () => {
                           background: 'rgba(36, 153, 255, 0.15)',
                           border: '1px solid rgba(36, 153, 255, 0.4)',
                           color: '#2499ff',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
                           cursor: 'pointer',
-                          fontSize: '11px',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          justifyContent: 'center',
                         }}
                       >
-                        <Edit2 className="w-3 h-3" /> Edit
+                        <Edit2 size={13} />
                       </button>
                       {p.status === 'ACTIVE' && p.role !== 'ADMIN' && (
                         <button
@@ -543,16 +542,15 @@ export const PersonnelPage = () => {
                             background: 'rgba(255, 80, 101, 0.15)',
                             border: '1px solid rgba(255, 80, 101, 0.4)',
                             color: '#ff5065',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '11px',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px',
+                            justifyContent: 'center',
                           }}
                         >
-                          <Trash2 className="w-3 h-3" /> Deactivate
+                          <Trash2 size={13} />
                         </button>
                       )}
                     </div>

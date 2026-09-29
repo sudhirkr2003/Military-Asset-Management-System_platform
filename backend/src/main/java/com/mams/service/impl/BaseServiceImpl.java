@@ -1,7 +1,9 @@
 package com.mams.service.impl;
 
+import com.mams.dto.request.BaseCreateRequest;
 import com.mams.dto.response.BaseDto;
 import com.mams.entity.Base;
+import com.mams.exception.BadRequestException;
 import com.mams.exception.ResourceNotFoundException;
 import com.mams.repository.BaseRepository;
 import com.mams.service.BaseService;
@@ -34,6 +36,33 @@ public class BaseServiceImpl implements BaseService {
         Base base = baseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Base", "id", id));
         return mapToDto(base);
+    }
+
+    @Override
+    @Transactional
+    public BaseDto createBase(BaseCreateRequest request) {
+        String cleanCode = request.getCode().trim().toUpperCase();
+        String cleanName = request.getName().trim();
+
+        if (baseRepository.findByCode(cleanCode).isPresent()) {
+            throw new BadRequestException("Military Base with code '" + cleanCode + "' already exists");
+        }
+
+        if (baseRepository.findByName(cleanName).isPresent()) {
+            throw new BadRequestException("Military Base with name '" + cleanName + "' already exists");
+        }
+
+        Base base = new Base(
+                null,
+                cleanName,
+                cleanCode,
+                request.getLocation() != null ? request.getLocation().trim() : null,
+                request.getCommanderName() != null ? request.getCommanderName().trim() : null,
+                "ACTIVE"
+        );
+
+        Base saved = baseRepository.save(base);
+        return mapToDto(saved);
     }
 
     private BaseDto mapToDto(Base base) {

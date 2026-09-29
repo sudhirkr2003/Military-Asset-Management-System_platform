@@ -329,7 +329,7 @@ export const AssetsPage = () => {
               <th>Type</th>
               <th>Status</th>
               <th>Description / Specifications</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
+              <th style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -370,25 +370,55 @@ export const AssetsPage = () => {
                       {eq.status || 'ACTIVE'}
                     </b>
                   </td>
-                  <td style={{ color: 'var(--muted)', fontSize: '12.5px', maxWidth: '280px' }}>
+                  <td
+                    style={{
+                      color: 'var(--muted)',
+                      fontSize: '12.5px',
+                      maxWidth: '300px',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                      paddingRight: '24px',
+                      lineHeight: '1.4',
+                    }}
+                  >
                     {eq.description || '-'}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '5px' }}>
+                  <td style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'inline-flex', gap: '6px' }}>
                       <button
                         title="Edit Asset"
-                        className="btn-action-edit"
                         onClick={() => handleOpenEdit(eq)}
+                        style={{
+                          background: 'rgba(36, 153, 255, 0.15)',
+                          border: '1px solid rgba(36, 153, 255, 0.4)',
+                          color: '#2499ff',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
                       >
-                        <Edit2 size={12} /> Edit
+                        <Edit2 size={13} />
                       </button>
                       {eq.status === 'ACTIVE' && (
                         <button
                           title="Deactivate Asset"
-                          className="btn-action-deactivate"
                           onClick={() => handleOpenDelete(eq)}
+                          style={{
+                            background: 'rgba(255, 80, 101, 0.15)',
+                            border: '1px solid rgba(255, 80, 101, 0.4)',
+                            color: '#ff5065',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
                         >
-                          <Trash2 size={12} /> Deactivate
+                          <Trash2 size={13} />
                         </button>
                       )}
                     </div>
