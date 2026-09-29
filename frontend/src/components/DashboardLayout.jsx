@@ -180,14 +180,20 @@ export const DashboardLayout = () => {
           <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>⌂</span>Dashboard
           </NavLink>
+          <NavLink to="/purchases" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span>🛒</span>Purchases <b>›</b>
+          </NavLink>
+          <NavLink to="/transfers" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span>🔄</span>Transfers <b>›</b>
+          </NavLink>
+          <NavLink to="/assignments" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span>👤</span>Assignments & Expended <b>›</b>
+          </NavLink>
           <NavLink to="/assets" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>◇</span>Assets <b>›</b>
           </NavLink>
           <NavLink to="/inventory" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>▱</span>Inventory <b>›</b>
-          </NavLink>
-          <NavLink to="/movements" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>↔</span>Movements <b>›</b>
           </NavLink>
           <NavLink to="/personnel" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>♙</span>Personnel <b>›</b>

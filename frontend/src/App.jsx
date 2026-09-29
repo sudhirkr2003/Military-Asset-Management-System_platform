@@ -5,6 +5,9 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardLayout } from './components/DashboardLayout';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { PurchasesPage } from './pages/PurchasesPage';
+import { TransfersPage } from './pages/TransfersPage';
+import { AssignmentsPage } from './pages/AssignmentsPage';
 import { AssetsPage } from './pages/AssetsPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { MovementsPage } from './pages/MovementsPage';
@@ -30,6 +33,9 @@ function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/purchases" element={<PurchasesPage />} />
+            <Route path="/transfers" element={<TransfersPage />} />
+            <Route path="/assignments" element={<AssignmentsPage />} />
             <Route path="/assets" element={<AssetsPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/movements" element={<MovementsPage />} />

@@ -1037,6 +1037,126 @@ tr:hover td {
   margin: 0 0 0.5rem 0;
 }
 
+/* ==================== SUBPAGE COMPACT STATS CARDS ==================== */
+.subpage-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 1100px) {
+  .subpage-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .subpage-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.subpage-stat-card {
+  background: linear-gradient(145deg, #0d2532 0%, #081b25 100%);
+  border: 1px solid #1b3d4b;
+  border-radius: 10px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: all 0.15s ease;
+}
+
+.subpage-stat-card:hover {
+  border-color: #2499ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.subpage-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.subpage-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8fa8b2;
+  margin: 0;
+}
+
+.subpage-stat-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+  margin: 2px 0 3px 0;
+}
+
+.subpage-stat-badge {
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.subpage-stat-badge.green {
+  color: #16d69d;
+}
+
+.subpage-stat-badge.blue {
+  color: #38bdf8;
+}
+
+.subpage-stat-badge.yellow {
+  color: #fbbf24;
+}
+
+.subpage-stat-badge.purple {
+  color: #c084fc;
+}
+
+.subpage-stat-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.subpage-stat-icon-wrapper.green {
+  background: rgba(22, 214, 157, 0.12);
+  color: #16d69d;
+  border: 1px solid rgba(22, 214, 157, 0.25);
+}
+
+.subpage-stat-icon-wrapper.blue {
+  background: rgba(36, 153, 255, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(36, 153, 255, 0.25);
+}
+
+.subpage-stat-icon-wrapper.yellow {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.subpage-stat-icon-wrapper.purple {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
 /* MODAL */
 .modal-backdrop {
   position: fixed;
