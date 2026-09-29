@@ -1,60 +1,61 @@
-# Military Asset Management System (MAMS) - Backend
+# Military Asset Management System (MAMS)
 
-A secure, role-based backend API built with **Spring Boot 3**, **Spring Security (JWT)**, **Spring Data JPA**, **PostgreSQL**, and **OpenAPI (Swagger UI)**.
+A full-stack, secure, role-based web platform for tracking military assets across multiple bases throughout their lifecycle (Purchase → Inventory → Transfer → Assignment → Return/Expenditure → Closing Balance).
+
+---
+
+## 📁 Project Structure
+
+```
+Military-Asset-Management-System_platform/
+├── backend/                       # Spring Boot 3 Backend API
+│   ├── src/
+│   │   ├── main/java/com/mams/    # Java source code (Controllers, Services, Security, etc.)
+│   │   └── main/resources/        # Configurations & Flyway migrations
+│   └── pom.xml                    # Maven dependencies
+├── frontend/                      # React.js (Vite) Frontend Application
+│   ├── src/                       # React components, pages, routing, state
+│   ├── package.json               # Frontend dependencies
+│   └── vite.config.js             # Vite configuration
+└── README.md                      # Project documentation
+```
 
 ---
 
 ## 🛠 Tech Stack
 
-- **Java**: 17+
-- **Framework**: Spring Boot 3.3.5
-- **Security**: Spring Security + JJWT (0.12.6)
-- **Database**: PostgreSQL
-- **Database Migrations**: Flyway
-- **Documentation**: OpenAPI 3 / Springdoc Swagger UI
-- **Build Tool**: Maven
+### Backend
+- **Java 17+** & **Spring Boot 3.3.5**
+- **Spring Security** + **JWT**
+- **Spring Data JPA** & **Hibernate**
+- **PostgreSQL** & **Flyway Migrations**
+- **OpenAPI 3 / Springdoc Swagger UI**
 
----
-
-## 📁 Package Structure
-
-```
-src/main/java/com/mams/
-├── config/        # Application & Swagger configurations
-├── security/      # JWT filters, authentication providers, user details
-├── controller/    # REST API controllers
-├── service/       # Business logic interfaces and implementations
-├── repository/    # Spring Data JPA repositories
-├── entity/        # Database JPA entities
-├── dto/           # Request & Response DTOs
-├── mapper/        # Entity-DTO mappers
-├── exception/     # Global exception handler & custom exceptions
-├── audit/         # Audit logging listeners & services
-└── util/          # Utilities & constants
-```
+### Frontend
+- **React.js** (JavaScript) + **Vite**
+- **React Router Dom**
+- **Axios** (API Client)
+- **Lucide React** (Icons)
+- **Recharts** (Dashboard Charts)
+- **Tailwind CSS**
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Prerequisites
-- JDK 17 or higher
-- Maven 3.8+
-- PostgreSQL (or run via Docker)
-
-### 2. Build & Test
+### 1. Running Backend
 ```bash
+cd backend
 mvn clean compile
-mvn test
-```
-
-### 3. Run the Application
-```bash
 mvn spring-boot:run
 ```
+- Swagger UI will be available at: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-### 4. API Documentation
-Once started, Swagger UI is available at:
-`http://localhost:8080/swagger-ui.html`
-OpenAPI JSON is available at:
-`http://localhost:8080/v3/api-docs`
+### 2. Running Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- Frontend will be available at: `http://localhost:5173`
