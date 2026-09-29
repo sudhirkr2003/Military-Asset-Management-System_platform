@@ -10,6 +10,7 @@ public class MovementLedgerDto {
     private String baseName;
     private Long equipmentTypeId;
     private String equipmentName;
+    private String equipmentCategory;
     private MovementType movementType;
     private long quantity;
     private String referenceType;
@@ -22,13 +23,14 @@ public class MovementLedgerDto {
     }
 
     public MovementLedgerDto(Long id, Long baseId, String baseName, Long equipmentTypeId, String equipmentName,
-                             MovementType movementType, long quantity, String referenceType, Long referenceId,
-                             String remarks, String createdBy, LocalDateTime timestamp) {
+                             String equipmentCategory, MovementType movementType, long quantity, String referenceType,
+                             Long referenceId, String remarks, String createdBy, LocalDateTime timestamp) {
         this.id = id;
         this.baseId = baseId;
         this.baseName = baseName;
         this.equipmentTypeId = equipmentTypeId;
         this.equipmentName = equipmentName;
+        this.equipmentCategory = equipmentCategory;
         this.movementType = movementType;
         this.quantity = quantity;
         this.referenceType = referenceType;
@@ -76,6 +78,14 @@ public class MovementLedgerDto {
 
     public void setEquipmentName(String equipmentName) {
         this.equipmentName = equipmentName;
+    }
+
+    public String getEquipmentCategory() {
+        return equipmentCategory;
+    }
+
+    public void setEquipmentCategory(String equipmentCategory) {
+        this.equipmentCategory = equipmentCategory;
     }
 
     public MovementType getMovementType() {

@@ -129,6 +129,8 @@ public class DashboardServiceImpl implements DashboardService {
                 m.getBase() != null ? m.getBase().getName() : null,
                 m.getEquipmentType() != null ? m.getEquipmentType().getId() : null,
                 m.getEquipmentType() != null ? m.getEquipmentType().getName() : null,
+                m.getEquipmentType() != null && m.getEquipmentType().getCategory() != null ?
+                        m.getEquipmentType().getCategory().name() : null,
                 m.getMovementType(),
                 m.getQuantity(),
                 m.getReferenceType(),

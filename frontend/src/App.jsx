@@ -2,8 +2,16 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { DashboardLayout } from './components/DashboardLayout';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { AssetsPage } from './pages/AssetsPage';
+import { InventoryPage } from './pages/InventoryPage';
+import { MovementsPage } from './pages/MovementsPage';
+import { PersonnelPage } from './pages/PersonnelPage';
+import { BasesPage } from './pages/BasesPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import './App.css';
 
 function App() {
@@ -12,14 +20,25 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          
+          {/* Protected Routes with Sidebar Layout */}
           <Route
-            path="/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardPage />
+                <DashboardLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/assets" element={<AssetsPage />} />
+            <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/movements" element={<MovementsPage />} />
+            <Route path="/personnel" element={<PersonnelPage />} />
+            <Route path="/bases" element={<BasesPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
