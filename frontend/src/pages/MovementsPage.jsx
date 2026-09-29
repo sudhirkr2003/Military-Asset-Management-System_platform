@@ -51,7 +51,7 @@ export const MovementsPage = () => {
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
             className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
+            style={{ width: 'auto', padding: '6px 12px', fontSize: '12.5px' }}
           >
             {types.map((t) => (
               <option key={t} value={t}>
@@ -60,7 +60,7 @@ export const MovementsPage = () => {
             ))}
           </select>
           <button className="btn-secondary" onClick={fetchMovements} disabled={loading}>
-            <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
           </button>
         </div>
       </div>

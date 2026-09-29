@@ -57,7 +57,7 @@ export const InventoryPage = () => {
             value={selectedBase}
             onChange={(e) => setSelectedBase(e.target.value)}
             className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
+            style={{ width: 'auto', padding: '6px 12px', fontSize: '12.5px' }}
           >
             <option value="ALL">All Bases & Depots</option>
             {bases.map((b) => (
@@ -67,7 +67,7 @@ export const InventoryPage = () => {
             ))}
           </select>
           <button className="btn-secondary" onClick={fetchInventory} disabled={loading}>
-            <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
           </button>
         </div>
       </div>
