@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import api from '../services/api';
+import defenseCrest from '../assets/defense_crest.svg';
 import {
   FileCode,
   ExternalLink,
@@ -21,7 +22,8 @@ import {
   Send,
   Clock,
   ArrowLeft,
-  LogIn
+  LogIn,
+  Activity
 } from 'lucide-react';
 
 export const SettingsPage = () => {
@@ -50,12 +52,21 @@ export const SettingsPage = () => {
 
   const endpointModules = [
     {
+      category: 'Health & System Monitoring',
+      icon: '💚',
+      description: 'Public health check and keep-alive endpoints for uptime monitors and system diagnostics',
+      endpoints: [
+        { method: 'GET', path: '/api/health', desc: 'Public health check verifying database connectivity, uptime, and latency', roles: ['Public'] },
+        { method: 'GET', path: '/health', desc: 'Legacy keep-alive endpoint alias', roles: ['Public'] }
+      ]
+    },
+    {
       category: 'Authentication',
       icon: '🔐',
       description: 'Endpoints for user login, current user profile, and user registration',
       endpoints: [
-        { method: 'POST', path: '/api/auth/login', desc: 'Authenticate user and get JWT access token', roles: ['Public'], samplePayload: '{\n  "usernameOrEmail": "admin",\n  "password": "password123"\n}' },
-        { method: 'POST', path: '/api/auth/register', desc: 'Register a new user account (Admin only)', roles: ['ADMIN'], samplePayload: '{\n  "fullName": "Capt. Aditi Sharma",\n  "username": "aditi_sharma",\n  "email": "aditi@mams.mil",\n  "password": "password123",\n  "role": "LOGISTICS_OFFICER",\n  "baseId": 1\n}' },
+        { method: 'POST', path: '/api/auth/login', desc: 'Authenticate user and get JWT access token', roles: ['Public'], samplePayload: '{\n  "usernameOrEmail": "admin",\n  "password": "password"\n}' },
+        { method: 'POST', path: '/api/auth/register', desc: 'Register a new user account (Admin only)', roles: ['ADMIN'], samplePayload: '{\n  "fullName": "Capt. Aditi Sharma",\n  "username": "aditi_sharma",\n  "email": "aditi@mams.mil",\n  "password": "password",\n  "role": "LOGISTICS_OFFICER",\n  "baseId": 1\n}' },
         { method: 'GET', path: '/api/auth/me', desc: 'Get current authenticated user details', roles: ['Authenticated'] }
       ]
     },
@@ -267,23 +278,99 @@ export const SettingsPage = () => {
   }).filter((mod) => mod.endpoints.length > 0);
 
   return (
-    <section className="view-panel-container" style={location.pathname === '/public-docs' ? { maxWidth: '1440px', margin: '0 auto', padding: '24px 32px', minHeight: '100vh' } : {}}>
+    <section
+      className="view-panel-container"
+      style={
+        location.pathname === '/public-docs'
+          ? {
+              maxWidth: '1360px',
+              margin: '0 auto',
+              padding: '24px 28px',
+              minHeight: '100vh',
+              background: '#f7faf5',
+              boxSizing: 'border-box'
+            }
+          : {}
+      }
+    >
       {/* Top Navigation for Public Docs View */}
       {location.pathname === '/public-docs' && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '24px' }}>🛡️</span>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '22px',
+            paddingBottom: '16px',
+            borderBottom: '1.5px solid #d5dfd2',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '9px',
+                background: 'linear-gradient(135deg, #0e381d 0%, #061c0e 100%)',
+                border: '1.5px solid #d4af37',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(14, 56, 29, 0.35)',
+                padding: '3px',
+                flexShrink: 0
+              }}
+            >
+              <img src={defenseCrest} alt="MAMS Crest" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
             <div>
-              <h2 style={{ fontSize: '18px', color: 'var(--text-heading)', margin: 0 }}>Military Asset Management System (MAMS)</h2>
-              <small style={{ color: 'var(--muted)', fontSize: '12px' }}>Public Technical Architecture & OpenAPI Specification</small>
+              <h2 style={{ fontSize: '18px', fontWeight: 850, color: '#0b1a11', margin: 0, letterSpacing: '0.02em' }}>
+                Military Asset Management System (MAMS)
+              </h2>
+              <small style={{ color: '#3b5c46', fontSize: '12px', fontWeight: 600 }}>
+                Public Technical Architecture & OpenAPI 3.0 Specification
+              </small>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Link to="/login" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', padding: '8px 14px', fontSize: '12px' }}>
-              <ArrowLeft size={14} /> Back to Login Portal
+            <Link
+              to="/login"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                textDecoration: 'none',
+                padding: '8px 16px',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                color: '#0e381d',
+                background: '#eaf3e8',
+                border: '1.5px solid #c7d8c5',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <ArrowLeft size={15} /> Back to Login Portal
             </Link>
             {currentUser && (
-              <Link to="/dashboard" className="action-trigger-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', padding: '8px 14px', fontSize: '12px' }}>
+              <Link
+                to="/dashboard"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
+                  padding: '8px 16px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)'
+                }}
+              >
                 Go to Dashboard →
               </Link>
             )}
@@ -295,7 +382,11 @@ export const SettingsPage = () => {
       <div className="view-panel-header">
         <div>
           <h2>📖 {isPublicDocRoute ? 'Public API Specification & Architecture' : 'System Architecture & API Documentation Hub'}</h2>
-          <small>{isPublicDocRoute ? 'Public OpenAPI 3.0 catalog. Authentication endpoints are testable below; other defense modules require authenticated military credentials.' : 'Interactive OpenAPI 3.0 catalog with in-app endpoint execution, schema specs, and RBAC clearances.'}</small>
+          <small>
+            {isPublicDocRoute
+              ? 'Public OpenAPI 3.0 catalog. Authentication and Health Check endpoints are testable below; other defense modules require authenticated military credentials.'
+              : 'Interactive OpenAPI 3.0 catalog with in-app endpoint execution, schema specs, and RBAC clearances.'}
+          </small>
         </div>
         <div className="view-panel-actions">
           {currentUser && !isPublicDocRoute ? (
@@ -313,9 +404,20 @@ export const SettingsPage = () => {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="card" style={{ padding: '12px 18px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
+      <div
+        className="card"
+        style={{
+          padding: '12px 18px',
+          marginBottom: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '14px',
+          flexWrap: 'wrap'
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--blue)', fontSize: '13px', fontWeight: 600 }}>
-          <BookOpen size={16} /> API Directory ({totalEndpointsCount} Endpoints across 8 Defense Modules)
+          <BookOpen size={16} /> API Directory ({totalEndpointsCount} Endpoints across 9 Defense Modules)
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

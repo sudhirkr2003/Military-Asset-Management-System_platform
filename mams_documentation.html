@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Military Asset Management System (MAMS) - Project Documentation</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 18mm 18mm 18mm;
+  }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    color: #1a202c;
+    line-height: 1.55;
+    font-size: 11pt;
+    margin: 0;
+    padding: 0;
+  }
+  .cover {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    text-align: center;
+    border: 3px double #1b4332;
+    padding: 40px;
+    background: linear-gradient(180deg, #f7faf5 0%, #ffffff 100%);
+    box-sizing: border-box;
+  }
+  .cover h1 {
+    font-size: 26pt;
+    color: #0b3419;
+    margin: 10px 0;
+    font-weight: 850;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .cover .subtitle {
+    font-size: 13pt;
+    color: #2d6a4f;
+    font-weight: 600;
+    max-width: 600px;
+    margin: 15px auto 30px;
+    line-height: 1.4;
+  }
+  .cover .badge-container {
+    margin: 20px 0 40px;
+  }
+  .cover .badge {
+    display: inline-block;
+    background: #1b4332;
+    color: #ffffff;
+    font-size: 10pt;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin: 4px;
+    letter-spacing: 0.05em;
+  }
+  .cover .meta-box {
+    margin-top: 40px;
+    padding: 15px 30px;
+    border: 1px solid #d8e2dc;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 10.5pt;
+    color: #334155;
+    text-align: left;
+    width: 80%;
+    max-width: 400px;
+  }
+  .meta-box p {
+    margin: 6px 0;
+  }
+  .meta-box strong {
+    color: #0f172a;
+  }
+  h2 {
+    color: #0b3419;
+    font-size: 16pt;
+    border-bottom: 2px solid #2d6a4f;
+    padding-bottom: 5px;
+    margin-top: 25px;
+    margin-bottom: 12px;
+    page-break-after: avoid;
+  }
+  h3 {
+    color: #1b4332;
+    font-size: 12.5pt;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    page-break-after: avoid;
+  }
+  p, li {
+    font-size: 10.5pt;
+    color: #2d3748;
+  }
+  ul, ol {
+    margin-top: 6px;
+    margin-bottom: 12px;
+    padding-left: 22px;
+  }
+  li {
+    margin-bottom: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 9.5pt;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 7px 10px;
+    text-align: left;
+  }
+  th {
+    background-color: #eaf2e8;
+    color: #0b3419;
+    font-weight: 750;
+  }
+  tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  code {
+    background: #edf2f7;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 9pt;
+    color: #0f172a;
+  }
+  pre {
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 9pt;
+    overflow-x: auto;
+    page-break-inside: avoid;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+  .callout {
+    border-left: 4px solid #1b4332;
+    background: #f4f8f3;
+    padding: 10px 14px;
+    margin: 14px 0;
+    border-radius: 0 6px 6px 0;
+    page-break-inside: avoid;
+  }
+  .callout strong {
+    color: #0b3419;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div style="font-size: 32pt; margin-bottom: 10px;">🛡️</div>
+  <h1>Military Asset Management System</h1>
+  <div class="subtitle">
+    Enterprise Defense Logistics, Inter-Base Movements, Asset Lifecycle & Tactical Armory Auditing Platform
+  </div>
+  <div class="badge-container">
+    <span class="badge">Spring Boot 3.3.5</span>
+    <span class="badge">React 18 + Vite</span>
+    <span class="badge">Stateless JWT + RBAC</span>
+    <span class="badge">Multi-Tier SWR Caching</span>
+  </div>
+  <div class="meta-box">
+    <p><strong>Document Version:</strong> 2.4.0 (Production Release)</p>
+    <p><strong>Author / Developer:</strong> Defense Engineering Team</p>
+    <p><strong>Deployment Platform:</strong> Render Cloud (Backend & Frontend)</p>
+    <p><strong>Date:</strong> October 2026</p>
+    <p><strong>Security Classification:</strong> Confidential / Operational</p>
+  </div>
+</div>
+
+<!-- SECTION 1: PROJECT OVERVIEW -->
+<h2>1. Project Overview</h2>
+<p>
+  The <strong>Military Asset Management System (MAMS)</strong> is an enterprise defense logistics platform architected to maintain 100% accountability of critical military assets—including combat vehicles, weapons, artillery, and ammunition—across distributed military installations, forward depots, and strategic commands.
+</p>
+
+<h3>Core Objectives</h3>
+<ul>
+  <li><strong>Live Inventory Reconciliation:</strong> Automatically maintain accurate Opening, Net Movement, and Closing Balances across all installations.</li>
+  <li><strong>Inter-Base Movement Governance:</strong> Ensure secure multi-base transfers with sender stock deductions and receiver inventory credits.</li>
+  <li><strong>Troop Allocations & Returns:</strong> Real-time tracking of weapon assignments to field personnel and operational ammunition expenditures during drills.</li>
+  <li><strong>Tamper-Proof Audit History:</strong> Append-only chronological movement ledger recording all officer actions, timestamps, and reference identifiers.</li>
+</ul>
+
+<h3>Assumptions</h3>
+<ul>
+  <li>Every movement transaction operates under ACID transactional boundaries; partial commits are strictly prohibited.</li>
+  <li>All military personnel and base installations possess unique identification codes (e.g., Service Numbers, Base Codes).</li>
+  <li>Asset types are categorized into <em>Durable Assets</em> (reusable equipment like rifles and tanks) and <em>Consumable Ordnance</em> (ammunition and flares).</li>
+</ul>
+
+<h3>Limitations & Future Enhancements</h3>
+<ul>
+  <li>GPS real-time satellite transit tracking between bases can be integrated in Phase II.</li>
+  <li>Barcode / RFID automated scanner integration for armory checkout counters.</li>
+</ul>
+
+<!-- SECTION 2: TECH STACK & ARCHITECTURE -->
+<div class="page-break"></div>
+<h2>2. Tech Stack & Architecture</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Layer</th>
+      <th>Technology Selected</th>
+      <th>Technical Justification</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Backend Framework</strong></td>
+      <td><strong>Spring Boot 3.3.5 / Java 17</strong></td>
+      <td>Type-safe compiled language, high-throughput multithreaded performance, declarative transactions (<code>@Transactional</code>), and enterprise-grade dependency injection.</td>
+    </tr>
+    <tr>
+      <td><strong>Security Engine</strong></td>
+      <td><strong>Spring Security 6 + Stateless JWT</strong></td>
+      <td>Microsecond token validation, zero session overhead on backend servers, method-level authorization (<code>@PreAuthorize</code>), and BCrypt cryptographic password hashing.</td>
+    </tr>
+    <tr>
+      <td><strong>Data Persistence</strong></td>
+      <td><strong>Spring Data JPA / Hibernate 6</strong></td>
+      <td>Strict relational schema enforcement, ACID guarantees, automatic connection pooling (HikariCP), and declarative SQL mapping.</td>
+    </tr>
+    <tr>
+      <td><strong>Frontend Platform</strong></td>
+      <td><strong>React 18 + Vite 5.4</strong></td>
+      <td>Blazing fast build tool, component modularity, instant hot-reloading, and lightweight production bundle (&lt;550 KB).</td>
+    </tr>
+    <tr>
+      <td><strong>Client Caching</strong></td>
+      <td><strong>Multi-Tier SWR (RAM + LocalStorage)</strong></td>
+      <td>Instant 0ms UI rendering with Stale-While-Revalidate background sync, single-flight request deduplication, and targeted mutation eviction.</td>
+    </tr>
+    <tr>
+      <td><strong>API Specification</strong></td>
+      <td><strong>OpenAPI 3.0 / Swagger UI</strong></td>
+      <td>Standardized REST contracts with interactive in-app test execution scoped to officer clearance levels.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>Architecture Pattern:</strong> Three-Tier Decoupled Architecture with Stateless RESTful communication, non-blocking auth verification, and CORS-hardened endpoints.
+</div>
+
+<!-- SECTION 3: DATA MODELS / SCHEMA -->
+<h2>3. Data Models & Relational Schema</h2>
+<p>
+  MAMS utilizes a normalized relational schema with strict Foreign Key constraints to prevent orphan movement records and maintain mathematical balance consistency:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Table / Entity</th>
+      <th>Primary Fields & Data Types</th>
+      <th>Relationships & Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong><code>bases</code></strong></td>
+      <td><code>id</code> (BIGINT PK), <code>name</code> (VARCHAR), <code>code</code> (VARCHAR UK), <code>location</code>, <code>commander_name</code>, <code>status</code></td>
+      <td>Represents military installations. One base has many users, inventories, and movements.</td>
+    </tr>
+    <tr>
+      <td><strong><code>users</code></strong></td>
+      <td><code>id</code> (BIGINT PK), <code>username</code> (UK), <code>email</code> (UK), <code>password</code> (BCrypt), <code>role</code> (ENUM), <code>base_id</code> (FK)</td>
+      <td>Stores officer credentials and operational roles. Linked to assigned base installation.</td>
+    </tr>
+    <tr>
+      <td><strong><code>equipment_types</code></strong></td>
+      <td><code>id</code> (BIGINT PK), <code>name</code> (UK), <code>code</code> (UK), <code>category</code> (ENUM), <code>unit_of_measure</code>, <code>is_expendable</code> (BOOL)</td>
+      <td>Master catalog defining defense asset specifications (Weapons, Vehicles, Ammunition, Radios).</td>
+    </tr>
+    <tr>
+      <td><strong><code>inventories</code></strong></td>
+      <td><code>id</code> (BIGINT PK), <code>base_id</code> (FK), <code>equipment_type_id</code> (FK), <code>opening_balance</code>, <code>available_qty</code>, <code>assigned_qty</code>, <code>expended_qty</code>, <code>closing_balance</code></td>
+      <td>Maintains live stock balances per base and equipment. Unique composite constraint on <code>(base_id, equipment_type_id)</code>.</td>
+    </tr>
+    <tr>
+      <td><strong><code>movement_ledger</code></strong></td>
+      <td><code>id</code> (BIGINT PK), <code>base_id</code> (FK), <code>equipment_type_id</code> (FK), <code>movement_type</code> (ENUM), <code>quantity</code>, <code>reference_type</code>, <code>created_by</code>, <code>timestamp</code></td>
+      <td>Append-only immutable audit ledger recording purchases, transfers, assignments, returns, and expenditures.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- SECTION 4: RBAC EXPLANATION -->
+<div class="page-break"></div>
+<h2>4. Role-Based Access Control (RBAC)</h2>
+<p>
+  MAMS enforces three-tier defense clearance levels implemented using Spring Security filters, JWT claims, and React route guards:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operational Role</th>
+      <th>Permissions & Functional Scope</th>
+      <th>Enforcement Mechanism</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>HQ Supreme Admin</strong><br><code>ROLE_ADMIN</code></td>
+      <td>Global visibility across all military installations. Full authority to create users, register bases, modify asset catalog, approve purchases/transfers, and access complete system logs.</td>
+      <td><code>@PreAuthorize("hasRole('ADMIN')")</code><br>Frontend: Full navigation access.</td>
+    </tr>
+    <tr>
+      <td><strong>Logistics Officer</strong><br><code>ROLE_LOGISTICS_OFFICER</code></td>
+      <td>Authorized to record asset procurements, execute inter-base supply transfers, register catalog items, and view logistical stock movements across sector depots.</td>
+      <td><code>@PreAuthorize("hasAnyRole('ADMIN','LOGISTICS_OFFICER')")</code><br>Personnel & troop assignments are strictly restricted.</td>
+    </tr>
+    <tr>
+      <td><strong>Base Commander</strong><br><code>ROLE_BASE_COMMANDER</code></td>
+      <td>Command over assigned tactical base. Authorized to issue weapons to soldiers, record shift returns, log ammunition expenditures, and transfer assets to sister bases.</td>
+      <td><code>@PreAuthorize("hasAnyRole('ADMIN','BASE_COMMANDER')")</code><br>Access restricted to the commander's base data.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- SECTION 5: API LOGGING -->
+<h2>5. API Logging & Transaction Auditing</h2>
+<ul>
+  <li><strong>Append-Only Movement Ledger:</strong> Every purchase, transfer, weapon issuance, shift return, and ammunition expenditure writes an immutable record to <code>movement_ledger</code> with authenticated officer identity and server timestamp.</li>
+  <li><strong>Spring Security Audit Filters:</strong> Inbound REST requests capture user credentials, HTTP method, URI path, and client IP in application logs.</li>
+  <li><strong>Security Alert Dispatcher:</strong> HTTP 403 Forbidden attempts trigger real-time client-side security event notifications without logging out the active officer.</li>
+</ul>
+
+<!-- SECTION 6: SETUP INSTRUCTIONS -->
+<div class="page-break"></div>
+<h2>6. Setup Instructions (Local & Cloud)</h2>
+
+<h3>1. Backend Setup (Spring Boot)</h3>
+<pre><code>cd backend
+# 1. Compile and package
+mvn clean compile
+
+# 2. Run backend server (starts on port 8080)
+mvn spring-boot:run
+</code></pre>
+<ul>
+  <li>Backend Base URL: <code>http://localhost:8080/api</code></li>
+  <li>Health Check: <code>http://localhost:8080/api/health</code></li>
+  <li>Swagger UI API Docs: <code>http://localhost:8080/swagger-ui/index.html</code></li>
+</ul>
+
+<h3>2. Frontend Setup (React / Vite)</h3>
+<pre><code>cd frontend
+# 1. Install dependencies
+npm install
+
+# 2. Launch Vite development server
+npm run dev -- --port 5173
+</code></pre>
+<ul>
+  <li>Web Client: <code>http://localhost:5173</code></li>
+  <li>Public Architecture & Specs: <code>http://localhost:5173/public-docs</code></li>
+</ul>
+
+<!-- SECTION 7: API ENDPOINTS -->
+<h2>7. Key Documented API Endpoints (Sample of 28)</h2>
+<table>
+  <thead>
+    <tr>
+      <th>HTTP Method</th>
+      <th>Endpoint Path</th>
+      <th>Description</th>
+      <th>Authorization Required</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><code>GET</code></td><td><code>/api/health</code></td><td>Public health check & keep-alive monitor</td><td>Public (PermitAll)</td></tr>
+    <tr><td><code>POST</code></td><td><code>/api/auth/login</code></td><td>Authenticate officer & generate JWT token</td><td>Public (PermitAll)</td></tr>
+    <tr><td><code>GET</code></td><td><code>/api/dashboard/summary</code></td><td>Aggregated Opening, Net Movement & Closing balances</td><td>Authenticated (RBAC)</td></tr>
+    <tr><td><code>POST</code></td><td><code>/api/movements/purchase</code></td><td>Record asset procurement and credit base armory</td><td>Admin, Logistics, Commander</td></tr>
+    <tr><td><code>POST</code></td><td><code>/api/movements/transfer</code></td><td>Transfer assets between installations with dual-base balance update</td><td>Admin, Logistics, Commander</td></tr>
+    <tr><td><code>POST</code></td><td><code>/api/movements/assign</code></td><td>Assign weapon/gear to soldier service number</td><td>Admin, Commander</td></tr>
+    <tr><td><code>POST</code></td><td><code>/api/movements/return</code></td><td>Return soldier asset back to available inventory</td><td>Admin, Commander</td></tr>
+    <tr><td><code>POST</code></td><td><code>/api/movements/expend</code></td><td>Record ammunition/ordnance expenditure in drill</td><td>Admin, Commander</td></tr>
+    <tr><td><code>GET</code></td><td><code>/api/inventory</code></td><td>Query live stock balances across all defense bases</td><td>Authenticated (RBAC)</td></tr>
+    <tr><td><code>GET</code></td><td><code>/api/reports/export/csv</code></td><td>Export chronological movement audit log to CSV</td><td>Authenticated (RBAC)</td></tr>
+  </tbody>
+</table>
+
+<!-- SECTION 8: LOGIN CREDENTIALS -->
+<h2>8. Demo Login Credentials</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Clearance Role</th>
+      <th>Username</th>
+      <th>Password</th>
+      <th>Command Scope</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>HQ Supreme Admin</strong></td>
+      <td><code>admin</code></td>
+      <td><code>password</code></td>
+      <td>Global Headquarters — Full operational access across all installations.</td>
+    </tr>
+    <tr>
+      <td><strong>Logistics Officer</strong></td>
+      <td><code>logistics</code></td>
+      <td><code>password</code></td>
+      <td>Base Supply Depot — Procurements, transfers & catalog control.</td>
+    </tr>
+    <tr>
+      <td><strong>Base Commander</strong></td>
+      <td><code>commander</code></td>
+      <td><code>password</code></td>
+      <td>Tactical Command — Troop weapon allocations, returns & live armory stock.</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>
