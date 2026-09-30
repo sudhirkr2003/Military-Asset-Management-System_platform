@@ -118,7 +118,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(daoAuthenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Public & Documentation Endpoints
+                        // 1. Public, Health Check & Documentation Endpoints
+                        .requestMatchers(
+                                "/api/health",
+                                "/api/public/**",
+                                "/health",
+                                "/actuator/**"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
