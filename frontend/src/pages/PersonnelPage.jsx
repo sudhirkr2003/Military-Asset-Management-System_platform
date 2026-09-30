@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { NavLink } from 'react-router-dom';
 import api from '../services/api';
 import {
   Users,
@@ -15,13 +17,35 @@ import {
   AlertCircle,
   X,
   Building,
-  Key
+  Key,
+  Lock
 } from 'lucide-react';
 
 export const PersonnelPage = () => {
+  const { user } = useAuth();
   const [personnelList, setPersonnelList] = useState([]);
   const [bases, setBases] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // If user is not ADMIN, show Access Denied / Clearance block
+  if (user && user.role !== 'ADMIN') {
+    return (
+      <div className="view-panel-container" style={{ padding: '60px 20px', textAlign: 'center' }}>
+        <div className="card" style={{ maxWidth: '520px', margin: '0 auto', padding: '36px 28px', border: '1px solid rgba(239, 68, 68, 0.35)', background: 'linear-gradient(145deg, #0f172a, #1e1b4b)' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', display: 'grid', placeItems: 'center', margin: '0 auto 16px auto' }}>
+            <Lock size={28} />
+          </div>
+          <h2 style={{ color: '#ffffff', fontSize: '20px', margin: '0 0 8px 0' }}>Classified Module • Access Restricted</h2>
+          <p style={{ color: 'var(--muted)', fontSize: '13px', lineHeight: 1.5, margin: '0 0 24px 0' }}>
+            Defense Personnel Roster & Officer Commissioning is strictly restricted to <strong>HQ Supreme Admin</strong>. Your current clearance level is <span className="pill pblue">{user?.role}</span>.
+          </p>
+          <NavLink to="/dashboard" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-flex' }}>
+            Return to Authorized Dashboard →
+          </NavLink>
+        </div>
+      </div>
+    );
+  }
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState('');
@@ -570,29 +594,31 @@ export const PersonnelPage = () => {
 
       {/* ==================== REGISTER PERSONNEL MODAL ==================== */}
       {showAddModal && (
-        <div className="modal-backdrop">
-          <div className="modal-container" style={{ maxWidth: '540px' }}>
-            <div className="modal-header">
-              <div className="modal-header-icon">
-                <UserPlus className="w-4 h-4" />
-              </div>
-              <div className="modal-header-text">
-                <h3>Register Defense Personnel</h3>
-                <p>Deploy officer or logistics custodian into the military hierarchy</p>
+        <div className="modal-backdrop" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '540px' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #163644' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(22, 214, 157, 0.15)', color: '#16d69d', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <UserPlus size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>Register Defense Personnel</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--muted)' }}>Deploy officer or logistics custodian into the military hierarchy</p>
+                </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowAddModal(false)}>
-                <X className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
 
             {formError && (
-              <div className="modal-alert-error" style={{ margin: '0 20px 10px 20px' }}>
+              <div className="modal-alert-error" style={{ margin: '14px 20px 0 20px' }}>
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{formError}</span>
               </div>
             )}
             {formSuccess && (
-              <div className="modal-alert-success" style={{ margin: '0 20px 10px 20px' }}>
+              <div className="modal-alert-success" style={{ margin: '14px 20px 0 20px' }}>
                 <CheckCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{formSuccess}</span>
               </div>
@@ -713,29 +739,31 @@ export const PersonnelPage = () => {
 
       {/* ==================== EDIT PERSONNEL MODAL ==================== */}
       {showEditModal && (
-        <div className="modal-backdrop">
-          <div className="modal-container" style={{ maxWidth: '540px' }}>
-            <div className="modal-header">
-              <div className="modal-header-icon" style={{ background: 'rgba(36, 153, 255, 0.2)', color: 'var(--blue)' }}>
-                <Edit2 className="w-4 h-4" />
-              </div>
-              <div className="modal-header-text">
-                <h3>Edit Personnel Posting</h3>
-                <p>Modify posting and roles for {selectedPersonnel?.fullName || selectedPersonnel?.username}</p>
+        <div className="modal-backdrop" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '540px' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #163644' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(36, 153, 255, 0.15)', color: '#38bdf8', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <Edit2 size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>Edit Personnel Posting</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--muted)' }}>Modify posting and roles for {selectedPersonnel?.fullName || selectedPersonnel?.username}</p>
+                </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
-                <X className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
 
             {formError && (
-              <div className="modal-alert-error" style={{ margin: '0 20px 10px 20px' }}>
+              <div className="modal-alert-error" style={{ margin: '14px 20px 0 20px' }}>
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{formError}</span>
               </div>
             )}
             {formSuccess && (
-              <div className="modal-alert-success" style={{ margin: '0 20px 10px 20px' }}>
+              <div className="modal-alert-success" style={{ margin: '14px 20px 0 20px' }}>
                 <CheckCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{formSuccess}</span>
               </div>
@@ -854,18 +882,20 @@ export const PersonnelPage = () => {
 
       {/* ==================== DELETE / DECOMMISSION MODAL ==================== */}
       {showDeleteModal && (
-        <div className="modal-backdrop">
-          <div className="modal-container" style={{ maxWidth: '420px' }}>
-            <div className="modal-header">
-              <div className="modal-header-icon" style={{ background: 'rgba(255, 80, 101, 0.2)', color: 'var(--red)' }}>
-                <Trash2 className="w-4 h-4" />
-              </div>
-              <div className="modal-header-text">
-                <h3>Deactivate Personnel</h3>
-                <p>Revoke system access for this officer?</p>
+        <div className="modal-backdrop" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '420px' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #163644' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(255, 80, 101, 0.15)', color: '#ff5065', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <Trash2 size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>Deactivate Personnel</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--muted)' }}>Revoke system access for this officer?</p>
+                </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowDeleteModal(false)}>
-                <X className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
 
@@ -873,7 +903,7 @@ export const PersonnelPage = () => {
               <p style={{ color: 'var(--muted)', fontSize: '12px', margin: 0 }}>
                 Officer: <strong style={{ color: '#fff' }}>{selectedPersonnel?.fullName} ({selectedPersonnel?.username})</strong>
               </p>
-              <p style={{ color: 'var(--muted)', fontSize: '11px', marginTop: '8px' }}>
+              <p style={{ color: 'var(--muted)', fontSize: '11px', marginTop: '8px', lineHeight: 1.4 }}>
                 Deactivating will revoke login authorization and system access. All past audit movements and transaction history logged by this officer will be preserved.
               </p>
             </div>

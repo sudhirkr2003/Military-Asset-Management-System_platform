@@ -11,7 +11,6 @@ import {
 
 export const DashboardLayout = () => {
   const { user, logout } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
 
   // Lookup Options from Backend
@@ -180,32 +179,53 @@ export const DashboardLayout = () => {
           <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>⌂</span>Dashboard
           </NavLink>
-          <NavLink to="/purchases" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>🛒</span>Purchases <b>›</b>
-          </NavLink>
-          <NavLink to="/transfers" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>🔄</span>Transfers <b>›</b>
-          </NavLink>
-          <NavLink to="/assignments" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>👤</span>Assignments & Expended <b>›</b>
-          </NavLink>
+
+          {(user?.role === 'ADMIN' || user?.role === 'LOGISTICS_OFFICER') && (
+            <NavLink to="/purchases" className={({ isActive }) => (isActive ? 'active' : '')}>
+              <span>🛒</span>Purchases <b>›</b>
+            </NavLink>
+          )}
+
+          {(user?.role === 'ADMIN' || user?.role === 'LOGISTICS_OFFICER') && (
+            <NavLink to="/transfers" className={({ isActive }) => (isActive ? 'active' : '')}>
+              <span>🔄</span>Transfers <b>›</b>
+            </NavLink>
+          )}
+
+          {(user?.role === 'ADMIN' || user?.role === 'BASE_COMMANDER') && (
+            <NavLink to="/assignments" className={({ isActive }) => (isActive ? 'active' : '')}>
+              <span>👤</span>Assignments & Expended <b>›</b>
+            </NavLink>
+          )}
+
           <NavLink to="/assets" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>◇</span>Assets <b>›</b>
           </NavLink>
+
           <NavLink to="/inventory" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>▱</span>Inventory <b>›</b>
           </NavLink>
-          <NavLink to="/personnel" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>♙</span>Personnel <b>›</b>
+
+          <NavLink to="/movements" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span>📋</span>Ledger <b>›</b>
           </NavLink>
+
           <NavLink to="/bases" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>⌖</span>Bases <b>›</b>
           </NavLink>
+
+          {user?.role === 'ADMIN' && (
+            <NavLink to="/personnel" className={({ isActive }) => (isActive ? 'active' : '')}>
+              <span>♙</span>Personnel <b>›</b>
+            </NavLink>
+          )}
+
           <NavLink to="/reports" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span>▥</span>Reports <b>›</b>
           </NavLink>
-          <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>⚙</span>Settings <b>›</b>
+
+          <NavLink to="/docs" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span>📖</span>Documentation <b>›</b>
           </NavLink>
         </nav>
         <div className="quote">
@@ -217,16 +237,11 @@ export const DashboardLayout = () => {
       <main className="main">
         {/* Topbar */}
         <header className="topbar">
-          <div className="search">
-            ⌕{' '}
-            <input
-              type="text"
-              placeholder="Search assets, movements, bases..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="topbar-search-input"
-            />
-            <kbd>Ctrl + K</kbd>
+          <div className="topbar-status-tag" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
+            <small style={{ color: 'var(--muted)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              DEFENSE LOGISTICS NETWORK • LIVE OPERATIONAL
+            </small>
           </div>
           <div className="profile">
             <button
@@ -236,9 +251,6 @@ export const DashboardLayout = () => {
             >
               + Record Movement
             </button>
-            <div className="bell">
-              ♧<i>3</i>
-            </div>
             <div className="avatar">CC</div>
             <div>
               <strong>{user?.fullName || 'Chief Commander'}</strong>

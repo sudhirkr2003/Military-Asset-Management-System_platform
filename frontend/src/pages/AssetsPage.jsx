@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
   Plus,
@@ -19,6 +20,14 @@ import {
 } from 'lucide-react';
 
 export const AssetsPage = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+  const isLogistics = user?.role === 'LOGISTICS_OFFICER';
+  const canCreate = isAdmin || isLogistics;
+  const canEdit = isAdmin || isLogistics;
+  const canDelete = isAdmin;
+  const hasAnyAction = canEdit || canDelete;
+
   const [equipmentList, setEquipmentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -243,9 +252,11 @@ export const AssetsPage = () => {
           <button className="btn-secondary" onClick={fetchEquipment} disabled={loading}>
             <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
           </button>
-          <button className="btn-primary" onClick={handleOpenAdd}>
-            <Plus size={13} className="inline mr-1" /> + Register New Asset
-          </button>
+          {canCreate && (
+            <button className="btn-primary" onClick={handleOpenAdd}>
+              <Plus size={13} className="inline mr-1" /> + Register New Asset
+            </button>
+          )}
         </div>
       </div>
 
@@ -329,13 +340,15 @@ export const AssetsPage = () => {
               <th>Type</th>
               <th>Status</th>
               <th>Description / Specifications</th>
-              <th style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>Actions</th>
+              {hasAnyAction && (
+                <th style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>Actions</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
+                <td colSpan={hasAnyAction ? 8 : 7} style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
                   Loading military defense assets...
                 </td>
               </tr>
@@ -383,52 +396,56 @@ export const AssetsPage = () => {
                   >
                     {eq.description || '-'}
                   </td>
-                  <td style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'inline-flex', gap: '6px' }}>
-                      <button
-                        title="Edit Asset"
-                        onClick={() => handleOpenEdit(eq)}
-                        style={{
-                          background: 'rgba(36, 153, 255, 0.15)',
-                          border: '1px solid rgba(36, 153, 255, 0.4)',
-                          color: '#2499ff',
-                          padding: '6px 8px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      {eq.status === 'ACTIVE' && (
-                        <button
-                          title="Deactivate Asset"
-                          onClick={() => handleOpenDelete(eq)}
-                          style={{
-                            background: 'rgba(255, 80, 101, 0.15)',
-                            border: '1px solid rgba(255, 80, 101, 0.4)',
-                            color: '#ff5065',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                  {hasAnyAction && (
+                    <td style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'inline-flex', gap: '6px' }}>
+                        {canEdit && (
+                          <button
+                            title="Edit Asset"
+                            onClick={() => handleOpenEdit(eq)}
+                            style={{
+                              background: 'rgba(36, 153, 255, 0.15)',
+                              border: '1px solid rgba(36, 153, 255, 0.4)',
+                              color: '#2499ff',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                        )}
+                        {canDelete && eq.status === 'ACTIVE' && (
+                          <button
+                            title="Deactivate Asset"
+                            onClick={() => handleOpenDelete(eq)}
+                            style={{
+                              background: 'rgba(255, 80, 101, 0.15)',
+                              border: '1px solid rgba(255, 80, 101, 0.4)',
+                              color: '#ff5065',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
-                  No military assets match the selected filters. Click <strong>+ Register New Asset</strong> to add one.
+                <td colSpan={hasAnyAction ? 8 : 7} style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
+                  No military assets match the selected filters. {canCreate && <span>Click <strong>+ Register New Asset</strong> to add one.</span>}
                 </td>
               </tr>
             )}

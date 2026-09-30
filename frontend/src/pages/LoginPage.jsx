@@ -172,6 +172,25 @@ export const LoginPage = () => {
             )}
           </button>
         </form>
+
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'center' }}>
+          <a
+            href="/public-docs"
+            style={{
+              color: '#93c5fd',
+              fontSize: '12px',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.color = '#60a5fa')}
+            onMouseOut={(e) => (e.currentTarget.style.color = '#93c5fd')}
+          >
+            📖 View Public System Architecture & API Docs →
+          </a>
+        </div>
       </div>
     </div>
   );

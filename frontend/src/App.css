@@ -1161,7 +1161,7 @@ tr:hover td {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(8px);
   z-index: 100;
   display: flex;
@@ -1170,15 +1170,52 @@ tr:hover td {
   padding: 1.5rem;
 }
 
-.modal-content {
+.modal-content,
+.modal-container {
   width: 100%;
   max-width: 620px;
-  background: #091a24;
+  background: #091a24 !important;
   border: 1px solid #1f4353;
   border-radius: 16px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(22, 214, 157, 0.15);
   overflow: hidden;
   animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Fix browser autofill light backgrounds */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px #06131c inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  border-color: #1e3f4f !important;
+}
+
+.modal-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(22, 214, 157, 0.15);
+  color: #16d69d;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.modal-header-text h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.modal-header-text p {
+  margin: 2px 0 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
 @keyframes modalScale {

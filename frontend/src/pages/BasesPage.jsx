@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
   Building,
@@ -15,6 +16,9 @@ import {
 } from 'lucide-react';
 
 export const BasesPage = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [bases, setBases] = useState([]);
   const [inventories, setInventories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -132,9 +136,11 @@ export const BasesPage = () => {
           <button className="btn-secondary" onClick={fetchBasesData} disabled={loading}>
             <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
           </button>
-          <button className="btn-primary" onClick={handleOpenAdd}>
-            <Plus className="w-3.5 h-3.5 inline mr-1" /> + Register Installation
-          </button>
+          {isAdmin && (
+            <button className="btn-primary" onClick={handleOpenAdd}>
+              <Plus className="w-3.5 h-3.5 inline mr-1" /> + Register Installation
+            </button>
+          )}
         </div>
       </div>
 

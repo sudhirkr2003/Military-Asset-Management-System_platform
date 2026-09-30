@@ -33,17 +33,50 @@ function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/purchases" element={<PurchasesPage />} />
-            <Route path="/transfers" element={<TransfersPage />} />
-            <Route path="/assignments" element={<AssignmentsPage />} />
+            <Route
+              path="/purchases"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'LOGISTICS_OFFICER']}>
+                  <PurchasesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transfers"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'LOGISTICS_OFFICER']}>
+                  <TransfersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assignments"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'BASE_COMMANDER']}>
+                  <AssignmentsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/assets" element={<AssetsPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/movements" element={<MovementsPage />} />
-            <Route path="/personnel" element={<PersonnelPage />} />
+            <Route
+              path="/personnel"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <PersonnelPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/bases" element={<BasesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/docs" element={<SettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/documentation" element={<SettingsPage />} />
           </Route>
+
+          {/* Public Documentation Route without login */}
+          <Route path="/public-docs" element={<SettingsPage />} />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
