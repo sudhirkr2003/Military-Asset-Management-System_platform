@@ -215,11 +215,11 @@ html, body {
 }
 
 .military-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.825rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #334155;
+  color: #1e293b;
 }
 
 .military-input-box {
@@ -246,7 +246,7 @@ html, body {
   border-radius: 10px;
   padding: 0.8rem 2.5rem 0.8rem 2.65rem;
   color: #0f172a;
-  font-size: 0.925rem;
+  font-size: 0.975rem;
   font-weight: 500;
   outline: none;
   transition: all 0.2s ease;
@@ -288,9 +288,9 @@ html, body {
   color: #ffffff;
   border: none;
   border-radius: 10px;
-  padding: 0.85rem;
-  font-size: 0.95rem;
-  font-weight: 600;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
@@ -299,6 +299,23 @@ html, body {
   align-items: center;
   justify-content: center;
   margin-top: 0.5rem;
+  box-sizing: border-box;
+}
+
+.military-login-btn-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.military-login-btn-inner svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 
 .military-login-btn:hover:not(:disabled) {
@@ -339,11 +356,11 @@ html, body {
 
 /* SIDEBAR (CLEAN & PRESTIGIOUS LIGHT DEFENSE COMMAND THEME) */
 .sidebar {
-  width: 258px;
-  flex: 0 0 258px;
+  width: 218px;
+  flex: 0 0 218px;
   background: linear-gradient(180deg, #ffffff 0%, #f7faf5 100%);
   border-right: 1px solid #d5dfd2;
-  padding: 12px 10px 10px;
+  padding: 9px 6px 7px;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -353,7 +370,7 @@ html, body {
   overflow: hidden;
   z-index: 50;
   box-sizing: border-box;
-  box-shadow: 2px 0 12px rgba(17, 36, 25, 0.05);
+  box-shadow: 2px 0 10px rgba(17, 36, 25, 0.05);
   transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), flex 0.25s cubic-bezier(0.2, 0, 0, 1), padding 0.2s ease, opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
@@ -373,17 +390,17 @@ html, body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 2px 6px 10px;
+  gap: 8.5px;
+  padding: 2px 4px 6.5px;
   border-bottom: 1.5px solid #d8e2d5;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   flex-shrink: 0;
 }
 
 .logo-shield {
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
   background: linear-gradient(135deg, #0e381d 0%, #061c0e 100%);
   border: 1.5px solid #d4af37;
   display: flex;
@@ -391,7 +408,7 @@ html, body {
   justify-content: center;
   box-shadow: 0 2px 8px rgba(14, 56, 29, 0.35);
   flex-shrink: 0;
-  padding: 3px;
+  padding: 2px;
   overflow: hidden;
 }
 
@@ -403,19 +420,20 @@ html, body {
 }
 
 .brand strong {
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 850;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: #0b1a11;
   display: block;
+  line-height: 1.15;
 }
 
 .brand small {
   display: block;
   color: #3b5c46;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   margin-top: 1px;
 }
 
@@ -443,8 +461,8 @@ html, body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 2px;
-  margin-bottom: 6px;
+  padding-right: 1px;
+  margin-bottom: 4px;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -457,30 +475,30 @@ html, body {
 }
 
 .nav-section-label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #1b4d2a;
-  letter-spacing: 0.08em;
+  font-size: 12.8px;
+  font-weight: 850;
+  color: #0c381c;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 6px 8px 2px;
+  padding: 6px 6px 2.5px;
   margin-top: 5px;
 }
 
 .nav-section-label:first-child {
-  padding-top: 2px;
+  padding-top: 1px;
   margin-top: 0;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 11px;
-  border-radius: 7px;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
   color: #0e2417;
   text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 650;
   transition: all 0.15s ease;
   cursor: pointer;
   border-left: 3px solid transparent;
@@ -515,12 +533,15 @@ html, body {
 
 .nav-text {
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-chevron {
   margin-left: auto;
   color: #6d8878;
   transition: transform 0.15s ease;
+  flex-shrink: 0;
 }
 
 .nav-link:hover .nav-chevron,
@@ -540,11 +561,11 @@ html, body {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 6.5px 9px;
+  gap: 7.5px;
+  padding: 5px 7.5px;
   background: #eef4eb;
   border: 1.5px solid #d0dcd0;
-  border-radius: 9px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
@@ -555,12 +576,12 @@ html, body {
 .sidebar-profile-card-btn.active {
   background: #ffffff;
   border-color: #1a6b3c;
-  box-shadow: 0 2px 10px rgba(26, 107, 60, 0.18);
+  box-shadow: 0 2px 8px rgba(26, 107, 60, 0.18);
 }
 
 .sidebar-profile-name {
-  font-size: 12.5px;
-  font-weight: 750;
+  font-size: 12px;
+  font-weight: 800;
   color: #0b1a11;
   line-height: 1.2;
   white-space: nowrap;
@@ -569,8 +590,8 @@ html, body {
 }
 
 .sidebar-profile-role {
-  font-size: 10.5px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 750;
   color: #1a6b3c;
   line-height: 1.1;
   white-space: nowrap;
@@ -581,14 +602,14 @@ html, body {
 .sidebar-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 7px;
+  border-radius: 6px;
   background: #edf3ea;
   border: 1.5px solid #1a6b3c;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   flex-shrink: 0;
 }
 

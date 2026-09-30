@@ -125,12 +125,13 @@ export const LoginPage = () => {
             className="military-login-btn"
           >
             {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
+              <span className="military-login-btn-inner">
                 <span className="military-spinner" /> Authenticating...
               </span>
             ) : (
-              <span className="flex items-center justify-center gap-2">
-                <LogIn className="w-4 h-4" /> Login
+              <span className="military-login-btn-inner">
+                <LogIn size={18} style={{ display: 'inline-block', verticalAlign: 'middle' }} />
+                <span>Login</span>
               </span>
             )}
           </button>
@@ -141,14 +142,14 @@ export const LoginPage = () => {
             href="/public-docs"
             style={{
               color: '#1a6b3c',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: 600,
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
-              padding: '7px 14px',
+              gap: '7px',
+              padding: '8px 16px',
               borderRadius: '8px',
               background: 'rgba(26, 107, 60, 0.08)',
               border: '1px solid rgba(26, 107, 60, 0.22)',
@@ -165,7 +166,7 @@ export const LoginPage = () => {
               e.currentTarget.style.borderColor = 'rgba(26, 107, 60, 0.22)';
             }}
           >
-            <BookOpen size={14} style={{ color: '#1a6b3c' }} />
+            <BookOpen size={15} style={{ color: '#1a6b3c' }} />
             <span>View Public System Architecture & API Docs →</span>
           </a>
         </div>

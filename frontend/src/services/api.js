@@ -73,6 +73,34 @@ api.request = async function (configOrUrl, maybeConfig) {
 
     // Cache HIT -> Return immediately (0ms instant page render)
     if (cached) {
+      // Trigger background revalidation to keep data fresh without blocking UI
+      if (!config.noBackgroundRevalidate && !apiCache.hasPending(cacheKey)) {
+        const bgPromise = originalRequest(config)
+          .then((response) => {
+            if (response.status >= 200 && response.status < 300 && response.data) {
+              const currentCached = apiCache.get(cacheKey);
+              const hasChanged = JSON.stringify(currentCached?.data) !== JSON.stringify(response.data);
+              apiCache.set(cacheKey, response.data, config.cacheTtl);
+              if (hasChanged) {
+                window.dispatchEvent(
+                  new CustomEvent('mams:cache_revalidated', {
+                    detail: { cacheKey, url: config.url, data: response.data }
+                  })
+                );
+              }
+            }
+            return response;
+          })
+          .catch((err) => {
+            console.debug('[Cache SWR Background Revalidation]:', err.message || err);
+          })
+          .finally(() => {
+            apiCache.removePending(cacheKey);
+          });
+
+        apiCache.setPending(cacheKey, bgPromise);
+      }
+
       return {
         data: cached.data,
         status: 200,
@@ -102,8 +130,14 @@ api.request = async function (configOrUrl, maybeConfig) {
     return requestPromise;
   }
 
-  // 2. Non-cached request (POST, PUT, DELETE, PATCH, or GET with forceRefresh)
+  // 2. Non-cached or forced live request (POST, PUT, DELETE, PATCH, or GET with forceRefresh)
   const response = await originalRequest(config);
+
+  // If this was a manual forceRefresh GET, update cache with the latest live data from database
+  if (method === 'get' && config.forceRefresh && response.status >= 200 && response.status < 300 && response.data) {
+    const cacheKey = generateCacheKey(config);
+    apiCache.set(cacheKey, response.data, config.cacheTtl);
+  }
 
   // Auto-evict cache and notify active views when data mutations happen
   if (method !== 'get' && response.status >= 200 && response.status < 300) {
