@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle, BookOpen } from 'lucide-react';
 import bgImage from '../assets/login_daylight_base.jpg';
 import defenseCrest from '../assets/defense_crest.svg';
 
@@ -136,22 +136,37 @@ export const LoginPage = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'center' }}>
+        <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px solid #dce4d9', textAlign: 'center' }}>
           <a
             href="/public-docs"
             style={{
-              color: '#93c5fd',
+              color: '#1a6b3c',
               fontSize: '12px',
+              fontWeight: 600,
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
+              padding: '7px 14px',
+              borderRadius: '8px',
+              background: 'rgba(26, 107, 60, 0.08)',
+              border: '1px solid rgba(26, 107, 60, 0.22)',
               transition: 'all 0.2s ease',
             }}
-            onMouseOver={(e) => (e.currentTarget.style.color = '#60a5fa')}
-            onMouseOut={(e) => (e.currentTarget.style.color = '#93c5fd')}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(26, 107, 60, 0.16)';
+              e.currentTarget.style.color = '#0e381d';
+              e.currentTarget.style.borderColor = '#1a6b3c';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(26, 107, 60, 0.08)';
+              e.currentTarget.style.color = '#1a6b3c';
+              e.currentTarget.style.borderColor = 'rgba(26, 107, 60, 0.22)';
+            }}
           >
-            📖 View Public System Architecture & API Docs →
+            <BookOpen size={14} style={{ color: '#1a6b3c' }} />
+            <span>View Public System Architecture & API Docs →</span>
           </a>
         </div>
       </div>

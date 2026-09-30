@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   FileText,
   Download,
@@ -347,8 +348,8 @@ export const ReportsPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
-                    Compiling military movement audit...
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
+                    <LoadingSpinner label="Compiling Military Movement Audit Ledger..." />
                   </td>
                 </tr>
               ) : movementReports.length > 0 ? (
@@ -427,8 +428,8 @@ export const ReportsPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
-                    Analyzing operational expenditures...
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
+                    <LoadingSpinner label="Analyzing Operational Expenditure Records..." />
                   </td>
                 </tr>
               ) : expenditureReports.length > 0 ? (
@@ -488,8 +489,8 @@ export const ReportsPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
-                    Auditing base armory inventory...
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
+                    <LoadingSpinner label="Auditing Base Armory Inventory & Balances..." />
                   </td>
                 </tr>
               ) : inventoryReports.length > 0 ? (

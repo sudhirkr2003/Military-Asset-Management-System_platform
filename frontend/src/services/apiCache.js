@@ -1,12 +1,12 @@
 /**
- * MAMS High-Performance In-Memory & Session API Caching Layer
+ * MAMS High-Performance In-Memory & LocalStorage API Caching Layer
  * Provides instant 0ms responses for cached endpoints, Single-Flight deduplication,
- * and automatic cache eviction on mutations.
+ * multi-tier storage (RAM + LocalStorage), and automatic cache eviction on mutations.
  */
 
 const CACHE_PREFIX = 'mams_cache_';
-const DEFAULT_TTL_MS = 60 * 1000; // 1 minute default for dynamic endpoints
-const LOOKUP_TTL_MS = 5 * 60 * 1000; // 5 minutes for stable reference data (bases, equipment)
+const DEFAULT_TTL_MS = 3 * 60 * 1000; // 3 minutes default for dynamic endpoints
+const LOOKUP_TTL_MS = 10 * 60 * 1000; // 10 minutes for stable reference data (bases, equipment)
 
 // In-Memory store for microsecond-fast lookups during a session
 const memoryStore = new Map();
@@ -18,10 +18,21 @@ const pendingRequests = new Map();
  * Determine custom TTL based on endpoint pattern
  */
 const getTtlForUrl = (url) => {
-  if (url.includes('/bases') || url.includes('/equipment')) {
+  if (url.includes('base') || url.includes('equipment')) {
     return LOOKUP_TTL_MS;
   }
   return DEFAULT_TTL_MS;
+};
+
+/**
+ * Clean & normalize URL key
+ */
+export const normalizeUrlKey = (url = '') => {
+  return url
+    .replace(/^https?:\/\/[^/]+/i, '') // strip host if present
+    .replace(/^\/?api\/?/, '') // strip leading /api
+    .replace(/^\/+/, '') // strip leading slashes
+    .replace(/\/+$/, ''); // strip trailing slashes
 };
 
 /**
@@ -29,19 +40,21 @@ const getTtlForUrl = (url) => {
  */
 export const generateCacheKey = (config) => {
   const method = (config.method || 'get').toLowerCase();
-  const url = (config.url || '').replace(/^\/+/, '');
+  const cleanUrl = normalizeUrlKey(config.url);
   let paramsString = '';
 
   if (config.params) {
     try {
-      const sortedKeys = Object.keys(config.params).sort();
-      paramsString = '?' + sortedKeys.map(k => `${k}=${config.params[k]}`).join('&');
+      const sortedKeys = Object.keys(config.params).filter(k => config.params[k] !== undefined && config.params[k] !== null).sort();
+      if (sortedKeys.length > 0) {
+        paramsString = '?' + sortedKeys.map(k => `${k}=${encodeURIComponent(config.params[k])}`).join('&');
+      }
     } catch {
       paramsString = '?' + JSON.stringify(config.params);
     }
   }
 
-  return `${method}:${url}${paramsString}`;
+  return `${method}:${cleanUrl}${paramsString}`;
 };
 
 export const apiCache = {
@@ -49,7 +62,7 @@ export const apiCache = {
    * Get cached data if valid and not expired
    */
   get(key) {
-    // 1. Check memory store
+    // 1. Check in-memory Map first (Fastest: 0ms)
     const memEntry = memoryStore.get(key);
     if (memEntry) {
       if (Date.now() < memEntry.expiry) {
@@ -59,20 +72,23 @@ export const apiCache = {
       memoryStore.delete(key);
     }
 
-    // 2. Check sessionStorage fallback
+    // 2. Check localStorage fallback (Persists across page changes / tabs)
     try {
-      const raw = sessionStorage.getItem(CACHE_PREFIX + key);
+      const storageKey = CACHE_PREFIX + key;
+      const raw = localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey);
       if (raw) {
         const entry = JSON.parse(raw);
         if (Date.now() < entry.expiry) {
-          // Restore to memory store for faster next lookup
+          // Restore to memory store for microsecond next lookup
           memoryStore.set(key, entry);
           return { data: entry.data, isStale: false };
         }
-        sessionStorage.removeItem(CACHE_PREFIX + key);
+        // Expired in storage
+        localStorage.removeItem(storageKey);
+        sessionStorage.removeItem(storageKey);
       }
     } catch (e) {
-      // sessionStorage might be disabled or full
+      // Storage might be disabled or restricted
     }
 
     return null;
@@ -90,14 +106,17 @@ export const apiCache = {
       expiry: Date.now() + ttl,
     };
 
-    // Save in memory
+    // Save in RAM memory store
     memoryStore.set(key, entry);
 
-    // Persist in session
+    // Persist in localStorage and sessionStorage
     try {
-      sessionStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry));
+      const storageKey = CACHE_PREFIX + key;
+      const serialized = JSON.stringify(entry);
+      localStorage.setItem(storageKey, serialized);
+      sessionStorage.setItem(storageKey, serialized);
     } catch (e) {
-      // Ignore sessionStorage storage limit exceptions
+      // Ignore storage quota exceeded errors
     }
   },
 
@@ -120,6 +139,23 @@ export const apiCache = {
       if (regex.test(key)) {
         memoryStore.delete(key);
       }
+    }
+
+    // Clear matching from localStorage
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const sKey = localStorage.key(i);
+        if (sKey && sKey.startsWith(CACHE_PREFIX)) {
+          const stripped = sKey.replace(CACHE_PREFIX, '');
+          if (regex.test(stripped)) {
+            keysToRemove.push(sKey);
+          }
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch (e) {
+      // Ignore
     }
 
     // Clear matching from sessionStorage
@@ -147,7 +183,14 @@ export const apiCache = {
     if (!url) return;
     const cleanUrl = url.toLowerCase();
 
-    if (cleanUrl.includes('movement') || cleanUrl.includes('purchase') || cleanUrl.includes('transfer') || cleanUrl.includes('assign') || cleanUrl.includes('expend') || cleanUrl.includes('return')) {
+    if (
+      cleanUrl.includes('movement') ||
+      cleanUrl.includes('purchase') ||
+      cleanUrl.includes('transfer') ||
+      cleanUrl.includes('assign') ||
+      cleanUrl.includes('expend') ||
+      cleanUrl.includes('return')
+    ) {
       this.invalidate('movements');
       this.invalidate('inventory');
       this.invalidate('dashboard');
@@ -184,6 +227,17 @@ export const apiCache = {
     memoryStore.clear();
     try {
       const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const sKey = localStorage.key(i);
+        if (sKey && sKey.startsWith(CACHE_PREFIX)) {
+          keysToRemove.push(sKey);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+
+    try {
+      const keysToRemove = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const sKey = sessionStorage.key(i);
         if (sKey && sKey.startsWith(CACHE_PREFIX)) {
@@ -191,9 +245,7 @@ export const apiCache = {
         }
       }
       keysToRemove.forEach(k => sessionStorage.removeItem(k));
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   },
 
   // Single-Flight in-flight tracker

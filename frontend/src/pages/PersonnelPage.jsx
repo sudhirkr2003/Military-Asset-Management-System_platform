@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { NavLink } from 'react-router-dom';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   Users,
   UserPlus,
@@ -417,8 +418,8 @@ export const PersonnelPage = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
-                  Loading military personnel roster...
+                <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
+                  <LoadingSpinner label="Fetching Military Personnel Roster & Security Clearances..." />
                 </td>
               </tr>
             ) : filteredPersonnel.length > 0 ? (

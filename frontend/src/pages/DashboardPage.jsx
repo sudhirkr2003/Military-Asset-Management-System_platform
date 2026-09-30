@@ -4,6 +4,7 @@ import api, { apiCache } from '../services/api';
 import heroDaylight from '../assets/hero_daylight_command.jpg';
 import indianArmyHeroAction from '../assets/indian_army_hero_action.jpg';
 import indianArmyPortalBg from '../assets/indian_army_portal_bg.jpg';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   Send,
   Package,
@@ -28,6 +29,28 @@ import {
   ChevronDown,
   Calendar
 } from 'lucide-react';
+
+const getIndianTimeGreeting = () => {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      hour: 'numeric',
+      hour12: false,
+    });
+    const hour = parseInt(formatter.format(now), 10);
+    if (hour >= 4 && hour < 12) return 'Good Morning,';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon,';
+    if (hour >= 17 && hour < 21) return 'Good Evening,';
+    return 'Good Night,';
+  } catch (e) {
+    const localHour = new Date().getHours();
+    if (localHour >= 4 && localHour < 12) return 'Good Morning,';
+    if (localHour >= 12 && localHour < 17) return 'Good Afternoon,';
+    if (localHour >= 17 && localHour < 21) return 'Good Evening,';
+    return 'Good Night,';
+  }
+};
 
 const BASE_COLORS = ['#299cff', '#18d69d', '#ffc033', '#a855f7', '#ec4899', '#3b82f6'];
 
@@ -321,9 +344,9 @@ export const DashboardPage = () => {
         <div className="hero-content">
           <div className="army-hero-insignia-pill">
             <span className="army-tricolor-strip"></span>
-            <span>INDIAN ARMY DEFENSE LOGISTICS COMMAND • सेवा परमो धर्मः</span>
+            <span>INDIAN ARMY DEFENSE LOGISTICS COMMAND</span>
           </div>
-          <p className="hero-greeting">Good Morning,</p>
+          <p className="hero-greeting">{getIndianTimeGreeting()}</p>
           <h1 className="hero-title">
             Chief <span>Commander</span>
           </h1>

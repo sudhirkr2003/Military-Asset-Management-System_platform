@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   ShoppingBag,
   Plus,
@@ -567,7 +568,11 @@ export const PurchasesPage = () => {
             ) : (
               <tr>
                 <td colSpan="9" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
-                  {loading ? 'Loading historical purchases...' : 'No purchases found matching selected filters.'}
+                  {loading ? (
+                    <LoadingSpinner label="Fetching Procurement & Consignment Ledger..." />
+                  ) : (
+                    'No purchases found matching selected filters.'
+                  )}
                 </td>
               </tr>
             )}

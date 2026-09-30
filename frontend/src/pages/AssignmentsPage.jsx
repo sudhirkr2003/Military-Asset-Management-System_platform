@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   UserCheck,
   Flame,
@@ -780,7 +781,11 @@ export const AssignmentsPage = () => {
             ) : (
               <tr>
                 <td colSpan="9" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
-                  {loading ? 'Loading records...' : 'No assignment or expenditure records found.'}
+                  {loading ? (
+                    <LoadingSpinner label="Fetching Personnel Assignment & Equipment Issue Ledger..." />
+                  ) : (
+                    'No assignment or expenditure records found.'
+                  )}
                 </td>
               </tr>
             )}

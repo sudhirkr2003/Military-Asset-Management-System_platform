@@ -90,17 +90,17 @@ export const DashboardLayout = () => {
 
     switch (path) {
       case '/purchases':
-        api.get('/movements/purchase').catch(() => {});
+        api.get('/movements').catch(() => {});
         api.get('/bases').catch(() => {});
         api.get('/equipment').catch(() => {});
         break;
       case '/transfers':
-        api.get('/movements/transfer').catch(() => {});
+        api.get('/movements').catch(() => {});
         api.get('/bases').catch(() => {});
         api.get('/equipment').catch(() => {});
         break;
       case '/assignments':
-        api.get('/movements/assignments').catch(() => {});
+        api.get('/movements').catch(() => {});
         api.get('/bases').catch(() => {});
         api.get('/equipment').catch(() => {});
         break;

@@ -3416,3 +3416,127 @@ tbody tr:hover {
     gap: 8px !important;
   }
 }
+
+/* ==========================================================================
+   CIRCULAR MILITARY RADAR LOADING SPINNER COMPONENT
+   ========================================================================== */
+.mams-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 20px;
+  gap: 14px;
+  width: 100%;
+}
+
+.mams-loading-container.small {
+  padding: 12px 10px;
+  gap: 8px;
+}
+
+.mams-loading-container.compact {
+  padding: 18px 12px;
+  gap: 10px;
+}
+
+.mams-spinner-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mams-loading-container.small .mams-spinner-wrapper {
+  width: 30px;
+  height: 30px;
+}
+
+.mams-spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+}
+
+.mams-spinner-ring.outer {
+  border-top-color: #1a6b3c;
+  border-right-color: #1a6b3c;
+  animation: mamsRotateOuter 0.9s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+  box-shadow: 0 0 10px rgba(26, 107, 60, 0.25);
+}
+
+.mams-spinner-ring.inner {
+  inset: 5px;
+  border-bottom-color: #d4af37;
+  border-left-color: #d4af37;
+  animation: mamsRotateInner 1.3s cubic-bezier(0.4, 0.1, 0.6, 0.9) infinite reverse;
+}
+
+.mams-loading-container.small .mams-spinner-ring.inner {
+  inset: 3px;
+  border-width: 2px;
+}
+
+.mams-spinner-core {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a6b3c;
+  animation: mamsPulseCore 1.5s ease-in-out infinite;
+}
+
+.mams-spinner-icon {
+  color: #1a6b3c;
+}
+
+.mams-spinner-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b5c46;
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-align: center;
+  font-family: inherit;
+  animation: mamsFadePulse 2s ease-in-out infinite;
+}
+
+.mams-loading-container.small .mams-spinner-label {
+  font-size: 11px;
+}
+
+.mams-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(237, 242, 234, 0.82);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+@keyframes mamsRotateOuter {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes mamsRotateInner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes mamsPulseCore {
+  0%, 100% { transform: scale(0.9); opacity: 0.75; }
+  50% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 4px rgba(26, 107, 60, 0.4)); }
+}
+
+@keyframes mamsFadePulse {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+

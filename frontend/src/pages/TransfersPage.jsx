@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   ArrowRightLeft,
   Plus,
@@ -588,7 +589,11 @@ export const TransfersPage = () => {
             ) : (
               <tr>
                 <td colSpan="9" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
-                  {loading ? 'Fetching transfer history...' : 'No transfer records found matching the selected filters.'}
+                  {loading ? (
+                    <LoadingSpinner label="Fetching Inter-Base Strategic Transfer Ledger..." />
+                  ) : (
+                    'No transfer records found matching the selected filters.'
+                  )}
                 </td>
               </tr>
             )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   RefreshCw,
   Building2,
@@ -296,7 +297,11 @@ export const InventoryPage = () => {
             ) : (
               <tr>
                 <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
-                  {loading ? 'Fetching live inventory...' : 'No inventory records found for selected criteria.'}
+                  {loading ? (
+                    <LoadingSpinner label="Fetching Armory Stock & Installation Quantities..." />
+                  ) : (
+                    'No inventory records found for selected criteria.'
+                  )}
                 </td>
               </tr>
             )}

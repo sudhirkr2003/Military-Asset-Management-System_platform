@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   Plus,
   Search,
@@ -342,8 +343,8 @@ export const AssetsPage = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={hasAnyAction ? 8 : 7} style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
-                  Loading military defense assets...
+                <td colSpan={hasAnyAction ? 8 : 7} style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
+                  <LoadingSpinner label="Fetching Military Asset Registry & Catalog..." />
                 </td>
               </tr>
             ) : filteredAssets.length > 0 ? (

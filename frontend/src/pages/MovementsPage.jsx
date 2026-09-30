@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { RefreshCw, Building, Shield, Search, ArrowRightLeft, Calendar } from 'lucide-react';
 import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
@@ -231,8 +232,12 @@ export const MovementsPage = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
-                  {loading ? 'Fetching movement ledger...' : 'No movement transactions found for the selected filters.'}
+                <td colSpan="9" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
+                  {loading ? (
+                    <LoadingSpinner label="Fetching Comprehensive Defense Movement Ledger..." />
+                  ) : (
+                    'No movement transactions found for the selected filters.'
+                  )}
                 </td>
               </tr>
             )}

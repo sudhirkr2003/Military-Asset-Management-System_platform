@@ -115,5 +115,26 @@ api.request = async function (configOrUrl, maybeConfig) {
   return response;
 };
 
+// Explicitly bind HTTP verb shortcuts to cached api.request
+api.get = function (url, config) {
+  return api.request({ ...(config || {}), method: 'get', url });
+};
+
+api.post = function (url, data, config) {
+  return api.request({ ...(config || {}), method: 'post', url, data });
+};
+
+api.put = function (url, data, config) {
+  return api.request({ ...(config || {}), method: 'put', url, data });
+};
+
+api.delete = function (url, config) {
+  return api.request({ ...(config || {}), method: 'delete', url });
+};
+
+api.patch = function (url, data, config) {
+  return api.request({ ...(config || {}), method: 'patch', url, data });
+};
+
 export { apiCache };
 export default api;

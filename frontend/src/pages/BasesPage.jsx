@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api, { apiCache } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   Building,
   Plus,
@@ -178,10 +179,13 @@ export const BasesPage = () => {
       />
 
       {/* Bases Grid */}
-      <div className="catalog-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-        {loading ? (
-          <div style={{ color: 'var(--muted)', padding: '20px' }}>Loading military installations...</div>
-        ) : filteredBases.length > 0 ? (
+      {loading ? (
+        <div style={{ padding: '40px 20px', display: 'flex', justifyContent: 'center' }}>
+          <LoadingSpinner label="Fetching Military Bases & Installation Readiness..." />
+        </div>
+      ) : (
+        <div className="catalog-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+          {filteredBases.length > 0 ? (
           filteredBases.map((b) => {
             const baseInv = inventories.filter((inv) => inv.baseId === b.id);
             const totalStock = baseInv.reduce((sum, inv) => sum + (Number(inv.availableQuantity) || 0), 0);
@@ -238,6 +242,7 @@ export const BasesPage = () => {
           <div style={{ color: 'var(--muted)', padding: '20px' }}>No military installations found.</div>
         )}
       </div>
+      )}
 
       {/* ==================== REGISTER BASE MODAL ==================== */}
       {showAddModal && (
