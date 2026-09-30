@@ -13,7 +13,8 @@ export const AuthProvider = ({ children }) => {
     }
   });
   const [token, setToken] = useState(() => localStorage.getItem('mams_token') || null);
-  const [loading, setLoading] = useState(true);
+  // Non-blocking: If token & user exist in localStorage, load immediately (0ms)
+  const [loading, setLoading] = useState(false);
 
   const logout = useCallback(() => {
     setUser(null);
@@ -27,16 +28,19 @@ export const AuthProvider = ({ children }) => {
       const savedToken = localStorage.getItem('mams_token');
       if (savedToken) {
         try {
-          const res = await api.get('/auth/me');
+          // Verify session in background without blocking UI
+          const res = await api.get('/auth/me', { noBackgroundRevalidate: true });
           if (res.data?.data) {
             setUser(res.data.data);
             localStorage.setItem('mams_user', JSON.stringify(res.data.data));
           }
-        } catch {
-          logout();
+        } catch (err) {
+          // If explicitly unauthorized (401), logout
+          if (err?.response?.status === 401) {
+            logout();
+          }
         }
       }
-      setLoading(false);
     };
 
     initAuth();
