@@ -4,6 +4,7 @@ import com.mams.security.jwt.AuthEntryPointJwt;
 import com.mams.security.jwt.AuthTokenFilter;
 import com.mams.security.jwt.CustomAccessDeniedHandler;
 import com.mams.security.services.UserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -34,6 +36,9 @@ public class SecurityConfig {
     private final AuthEntryPointJwt unauthorizedHandler;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final AuthTokenFilter authTokenFilter;
+
+    @Value("${app.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*,https://*.onrender.com,https://*}")
+    private String corsAllowedOrigins;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService,
                           AuthEntryPointJwt unauthorizedHandler,
@@ -84,12 +89,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "https://*.onrender.com",
-                "https://*"
-        ));
+        List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
         configuration.setExposedHeaders(List.of("Authorization"));
