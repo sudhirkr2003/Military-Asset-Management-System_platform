@@ -3,6 +3,8 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
+import defenseCrest from '../assets/defense_crest.svg';
+import commanderAvatar from '../assets/commander_avatar.jpg';
 import {
   LogOut,
   X,
@@ -285,7 +287,7 @@ export const DashboardLayout = () => {
       <aside className={`sidebar ${desktopSidebarOpen ? '' : 'desktop-collapsed'} ${mobileNavOpen ? 'mobile-open' : ''}`}>
         <div className="brand">
           <div className="logo-shield">
-            <Shield className="logo-shield-icon" size={20} />
+            <img src={defenseCrest} alt="MAMS Defense Crest" className="logo-shield-img" />
           </div>
           <div>
             <strong>MAMS DEFENSE</strong>
@@ -469,7 +471,9 @@ export const DashboardLayout = () => {
             title="User Profile & Station Controls"
             type="button"
           >
-            <div className="avatar sidebar-avatar">{getInitials(user?.fullName)}</div>
+            <div className="avatar sidebar-avatar">
+              <img src={commanderAvatar} alt="Commander Avatar" className="avatar-photo" />
+            </div>
             <div className="sidebar-profile-details">
               <strong className="sidebar-profile-name">{user?.fullName || 'Chief Commander Admin'}</strong>
               <small className="sidebar-profile-role">{user?.role === 'ADMIN' ? 'HQ Supreme Admin' : user?.role?.replace('_', ' ') || 'HQ Supreme Admin'}</small>
@@ -548,7 +552,7 @@ export const DashboardLayout = () => {
               <Plus size={13} /> <span className="btn-text">Record Movement</span>
             </button>
 
-            {/* Topbar Profile Trigger Button - Circular 'CA' Avatar */}
+            {/* Topbar Profile Trigger Button - Circular Commander Avatar */}
             <button
               className={`topbar-avatar-btn circular-profile-btn ${profileMenuOpen ? 'active' : ''}`}
               onClick={() => setProfileMenuOpen((prev) => !prev)}
@@ -557,7 +561,9 @@ export const DashboardLayout = () => {
               title={`View Profile (${user?.fullName || 'Chief Commander Admin'})`}
               type="button"
             >
-              <div className="avatar circular-avatar">{getInitials(user?.fullName)}</div>
+              <div className="avatar circular-avatar">
+                <img src={commanderAvatar} alt="Commander Avatar" className="avatar-photo circular" />
+              </div>
             </button>
 
             {/* Floating Profile Dropdown Menu */}
@@ -565,7 +571,7 @@ export const DashboardLayout = () => {
               <div className="profile-dropdown-menu" style={{ width: '240px' }}>
                 <div className="dropdown-user-header">
                   <div className="dropdown-avatar-large">
-                    {getInitials(user?.fullName)}
+                    <img src={commanderAvatar} alt="Commander Avatar" className="avatar-photo circular" />
                   </div>
                   <div className="dropdown-user-details">
                     <h4 className="dropdown-user-name">{user?.fullName || 'Chief Commander Admin'}</h4>

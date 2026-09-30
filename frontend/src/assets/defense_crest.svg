@@ -51,7 +51,8 @@
         fill="none" 
         stroke="url(#goldLuster)" 
         stroke-width="1.8" 
-        stroke-opacity="0.85"/>
+        stroke-opacity="0.85"
+        stroke-dasharray="none"/>
 
   <!-- 3. Indian Tiranga Ribbon / Sash at Upper Section -->
   <g>

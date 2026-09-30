@@ -381,16 +381,25 @@ html, body {
 }
 
 .logo-shield {
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, rgba(26, 107, 60, 0.14), rgba(197, 155, 39, 0.18));
-  border: 1.5px solid #1a6b3c;
-  display: grid;
-  place-items: center;
-  color: #1a6b3c;
-  box-shadow: 0 0 12px rgba(26, 107, 60, 0.18);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0e381d 0%, #061c0e 100%);
+  border: 1.5px solid #d4af37;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(14, 56, 29, 0.35);
   flex-shrink: 0;
+  padding: 3px;
+  overflow: hidden;
+}
+
+.logo-shield-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
 }
 
 .brand strong {
@@ -566,15 +575,16 @@ html, body {
 
 
 .sidebar-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #0ea5e9, #10b981);
-  display: grid;
-  place-items: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: #ffffff;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #edf3ea;
+  border: 1.5px solid #1a6b3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   flex-shrink: 0;
 }
 
@@ -584,26 +594,6 @@ html, body {
   min-width: 0;
   flex: 1;
   overflow: hidden;
-}
-
-.sidebar-profile-name {
-  font-size: 12px;
-  font-weight: var(--fw-header);
-  color: var(--text-heading);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sidebar-profile-role {
-  font-size: 10px;
-  font-weight: var(--fw-body);
-  color: var(--muted);
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Sidebar Popover (Opens Upwards above sidebar bottom) */
@@ -805,38 +795,41 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--panel2);
-  border: 1.5px solid var(--line);
+  background: #ffffff;
+  border: 2px solid #1a6b3c;
   padding: 0;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .topbar-avatar-btn:hover,
 .topbar-avatar-btn.active {
-  background: var(--panel);
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2), 0 3px 10px rgba(5, 150, 105, 0.2);
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.35), 0 3px 10px rgba(26, 107, 60, 0.25);
   transform: translateY(-1px);
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #0ea5e9, #10b981);
-  display: grid;
-  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #edf3ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 11.5px;
   font-weight: 600;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.25);
+  color: #1a6b3c;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
+  overflow: hidden;
+  border: 1.5px solid #dce4d9;
 }
 
 .avatar.circular-avatar {
@@ -847,6 +840,18 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.02em;
   box-shadow: none;
+  border: none;
+}
+
+.avatar-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-photo.circular {
+  border-radius: 50%;
 }
 
 .profile-info-compact {
@@ -913,17 +918,17 @@ html, body {
 }
 
 .dropdown-avatar-large {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #0ea5e9, #10b981);
-  display: grid;
-  place-items: center;
-  font-size: 16px;
-  font-weight: 700;
-  color: #ffffff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #edf3ea;
+  border: 2px solid #1a6b3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 4px 12px rgba(26, 107, 60, 0.2);
 }
 
 .dropdown-user-details {

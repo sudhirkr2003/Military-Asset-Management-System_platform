@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import bgImage from '../assets/login_daylight_base.jpg';
+import defenseCrest from '../assets/defense_crest.svg';
 
 export const LoginPage = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
@@ -48,47 +49,9 @@ export const LoginPage = () => {
       <div className="military-login-overlay" />
 
       <div className="military-login-card">
-        {/* Military Chevron Shield Badge Logo */}
-        <div className="military-logo-wrapper">
-          <svg
-            className="military-badge-icon"
-            viewBox="0 0 64 64"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Outer Shield Outline */}
-            <path
-              d="M32 4L54 14V34C54 47.5 44.5 56.5 32 60C19.5 56.5 10 47.5 10 34V14L32 4Z"
-              stroke="#34d399"
-              strokeWidth="3.5"
-              strokeLinejoin="round"
-              fill="none"
-            />
-            {/* Inner Chevron 1 */}
-            <path
-              d="M20 22L32 29L44 22"
-              stroke="#34d399"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Inner Chevron 2 */}
-            <path
-              d="M20 31L32 38L44 31"
-              stroke="#34d399"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Inner Chevron 3 */}
-            <path
-              d="M20 40L32 47L44 40"
-              stroke="#34d399"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+        {/* Military Defense Crest Badge Logo */}
+        <div className="military-logo-wrapper" style={{ width: '64px', height: '64px', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={defenseCrest} alt="MAMS Defense Crest" style={{ width: '56px', height: '56px', objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))' }} />
         </div>
 
         {/* Title */}
