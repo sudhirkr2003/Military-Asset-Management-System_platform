@@ -1,6 +1,11 @@
 package com.mams.service;
 
 import com.mams.dto.response.DashboardSummaryDto;
+import com.mams.entity.Base;
+import com.mams.entity.EquipmentType;
+import com.mams.entity.Inventory;
+import com.mams.entity.MovementLedger;
+import com.mams.entity.enums.EquipmentCategory;
 import com.mams.entity.enums.MovementType;
 import com.mams.repository.InventoryRepository;
 import com.mams.repository.MovementLedgerRepository;
@@ -13,6 +18,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -39,25 +47,22 @@ public class DashboardServiceTest {
     void testGetSummary_AccurateMathematicalCalculations() {
         when(securityUtils.validateAndGetEffectiveBaseId(any())).thenReturn(null);
 
-        // Mock inventory counts
-        when(inventoryRepository.sumOpeningBalance(any(), any())).thenReturn(1000L);
-        when(inventoryRepository.sumAvailableQuantity(any(), any())).thenReturn(900L);
-        when(inventoryRepository.sumAssignedQuantity(any(), any())).thenReturn(250L);
-        when(inventoryRepository.sumExpendedQuantity(any(), any())).thenReturn(50L);
-        when(inventoryRepository.sumClosingBalance(any(), any())).thenReturn(1200L);
+        Base base = new Base(1L, "Alpha Base", "ALPHA01", "Sector 1", "Cmdr Sharma", "ACTIVE");
+        EquipmentType eq = new EquipmentType(1L, "Rifle", "WPN-01", EquipmentCategory.WEAPON, "units", false, "Desc", "ACTIVE");
 
-        // Mock movement counts
-        when(movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                eq(MovementType.PURCHASE), any(), any(), any(), any()))
-                .thenReturn(300L);
+        Inventory inv = new Inventory(1L, base, eq, 1000L, 900L, 250L, 50L, 1200L);
+        when(inventoryRepository.findAll()).thenReturn(List.of(inv));
 
-        when(movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                eq(MovementType.TRANSFER_IN), any(), any(), any(), any()))
-                .thenReturn(100L);
+        MovementLedger m1 = new MovementLedger(1L, base, eq, MovementType.PURCHASE, 300L, "PURCHASE", 1L, "PO", "admin");
+        m1.setTimestamp(LocalDateTime.now());
 
-        when(movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                eq(MovementType.TRANSFER_OUT), any(), any(), any(), any()))
-                .thenReturn(150L);
+        MovementLedger m2 = new MovementLedger(2L, base, eq, MovementType.TRANSFER_IN, 100L, "TRANSFER", 2L, "TI", "admin");
+        m2.setTimestamp(LocalDateTime.now());
+
+        MovementLedger m3 = new MovementLedger(3L, base, eq, MovementType.TRANSFER_OUT, 150L, "TRANSFER", 3L, "TO", "admin");
+        m3.setTimestamp(LocalDateTime.now());
+
+        when(movementLedgerRepository.findAll()).thenReturn(List.of(m1, m2, m3));
 
         DashboardSummaryDto summary = dashboardService.getSummary(null, null, "ALL");
 

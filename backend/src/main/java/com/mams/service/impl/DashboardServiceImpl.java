@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,37 +38,77 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDateTime startDate = calculateStartDate(period);
         LocalDateTime endDate = LocalDateTime.now();
 
-        Long openingBalance = inventoryRepository.sumOpeningBalance(effectiveBaseId, equipmentTypeId);
-        Long availableQuantity = inventoryRepository.sumAvailableQuantity(effectiveBaseId, equipmentTypeId);
-        Long assignedQuantity = inventoryRepository.sumAssignedQuantity(effectiveBaseId, equipmentTypeId);
-        Long expendedQuantity = inventoryRepository.sumExpendedQuantity(effectiveBaseId, equipmentTypeId);
-        Long closingBalance = inventoryRepository.sumClosingBalance(effectiveBaseId, equipmentTypeId);
+        List<Inventory> inventories = effectiveBaseId != null
+                ? inventoryRepository.findByBaseId(effectiveBaseId)
+                : inventoryRepository.findAll();
 
-        Long purchases = movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                MovementType.PURCHASE, effectiveBaseId, equipmentTypeId, startDate, endDate);
-        Long transferIn = movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                MovementType.TRANSFER_IN, effectiveBaseId, equipmentTypeId, startDate, endDate);
-        Long transferOut = movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                MovementType.TRANSFER_OUT, effectiveBaseId, equipmentTypeId, startDate, endDate);
+        if (equipmentTypeId != null) {
+            inventories = inventories.stream()
+                    .filter(i -> i.getEquipmentType() != null && equipmentTypeId.equals(i.getEquipmentType().getId()))
+                    .collect(Collectors.toList());
+        }
 
-        long safeOpening = openingBalance != null ? openingBalance : 0;
-        long safePurchases = purchases != null ? purchases : 0;
-        long safeTransferIn = transferIn != null ? transferIn : 0;
-        long safeTransferOut = transferOut != null ? transferOut : 0;
-        long safeAssigned = assignedQuantity != null ? assignedQuantity : 0;
-        long safeExpended = expendedQuantity != null ? expendedQuantity : 0;
-        long safeClosing = closingBalance != null ? closingBalance : (safeOpening + safePurchases + safeTransferIn - safeTransferOut - safeExpended);
+        long openingBalance = inventories.stream().mapToLong(Inventory::getOpeningBalance).sum();
+        long availableQuantity = inventories.stream().mapToLong(Inventory::getAvailableQuantity).sum();
+        long assignedQuantity = inventories.stream().mapToLong(Inventory::getAssignedQuantity).sum();
+        long expendedQuantity = inventories.stream().mapToLong(Inventory::getExpendedQuantity).sum();
+        long closingBalance = inventories.stream().mapToLong(Inventory::getClosingBalance).sum();
 
-        long netMovement = safePurchases + safeTransferIn - safeTransferOut;
+        List<MovementLedger> movements = effectiveBaseId != null
+                ? movementLedgerRepository.findByBaseId(effectiveBaseId)
+                : movementLedgerRepository.findAll();
+
+        if (equipmentTypeId != null) {
+            movements = movements.stream()
+                    .filter(m -> m.getEquipmentType() != null && equipmentTypeId.equals(m.getEquipmentType().getId()))
+                    .collect(Collectors.toList());
+        }
+
+        if (startDate != null) {
+            movements = movements.stream()
+                    .filter(m -> m.getTimestamp() != null && !m.getTimestamp().isBefore(startDate))
+                    .collect(Collectors.toList());
+        }
+
+        if (endDate != null) {
+            movements = movements.stream()
+                    .filter(m -> m.getTimestamp() != null && !m.getTimestamp().isAfter(endDate))
+                    .collect(Collectors.toList());
+        }
+
+        long purchases = movements.stream()
+                .filter(m -> m.getMovementType() == MovementType.PURCHASE)
+                .mapToLong(MovementLedger::getQuantity)
+                .sum();
+
+        long transferIn = movements.stream()
+                .filter(m -> m.getMovementType() == MovementType.TRANSFER_IN)
+                .mapToLong(MovementLedger::getQuantity)
+                .sum();
+
+        long transferOut = movements.stream()
+                .filter(m -> m.getMovementType() == MovementType.TRANSFER_OUT)
+                .mapToLong(MovementLedger::getQuantity)
+                .sum();
+
+        long safeClosing = closingBalance > 0
+                ? closingBalance
+                : (openingBalance + purchases + transferIn - transferOut - expendedQuantity);
+
+        if (safeClosing <= 0 && (availableQuantity > 0 || assignedQuantity > 0)) {
+            safeClosing = availableQuantity + assignedQuantity;
+        }
+
+        long netMovement = purchases + transferIn - transferOut;
 
         return new DashboardSummaryDto(
-                safeOpening,
-                safePurchases,
-                safeTransferIn,
-                safeTransferOut,
+                openingBalance,
+                purchases,
+                transferIn,
+                transferOut,
                 netMovement,
-                safeAssigned,
-                safeExpended,
+                assignedQuantity,
+                expendedQuantity,
                 safeClosing
         );
     }
@@ -78,7 +117,17 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public List<MovementLedgerDto> getRecentMovements(Long baseId) {
         Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
-        return movementLedgerRepository.findRecentMovements(effectiveBaseId).stream()
+        List<MovementLedger> movements = effectiveBaseId != null
+                ? movementLedgerRepository.findByBaseId(effectiveBaseId)
+                : movementLedgerRepository.findAll();
+
+        return movements.stream()
+                .sorted((a, b) -> {
+                    if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
+                    if (a.getTimestamp() == null) return 1;
+                    if (b.getTimestamp() == null) return -1;
+                    return b.getTimestamp().compareTo(a.getTimestamp());
+                })
                 .limit(10)
                 .map(this::mapMovementToDto)
                 .collect(Collectors.toList());
@@ -147,3 +196,4 @@ public class DashboardServiceImpl implements DashboardService {
         );
     }
 }
+
