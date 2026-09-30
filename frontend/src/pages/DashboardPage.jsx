@@ -110,9 +110,69 @@ export const DashboardPage = () => {
         api.get('/inventory', subConfig).catch(() => null),
       ]);
 
-      // 1. KPI Summary
-      if (summaryRes?.data?.data) {
-        setSummary((prev) => ({ ...prev, ...summaryRes.data.data }));
+      // 1. KPI Summary & Dynamic Aggregation
+      let kpiData = summaryRes?.data?.data;
+      const inventories = invRes?.data?.data || [];
+      const movements = movementsRes?.data?.data || [];
+
+      // If backend summary returned 0s or failed, compute accurately from live inventories and movements
+      if (!kpiData || (kpiData.openingBalance === 0 && kpiData.closingBalance === 0 && inventories.length > 0)) {
+        let filteredInv = inventories;
+        if (selectedBase !== 'ALL') {
+          filteredInv = filteredInv.filter((i) => String(i.baseId) === String(selectedBase));
+        }
+        if (selectedEquipment !== 'ALL') {
+          filteredInv = filteredInv.filter((i) => String(i.equipmentTypeId) === String(selectedEquipment));
+        }
+
+        let filteredMov = movements;
+        if (selectedBase !== 'ALL') {
+          filteredMov = filteredMov.filter((m) => String(m.baseId) === String(selectedBase));
+        }
+        if (selectedEquipment !== 'ALL') {
+          filteredMov = filteredMov.filter((m) => String(m.equipmentTypeId) === String(selectedEquipment));
+        }
+
+        const opening = filteredInv.reduce((sum, i) => sum + (Number(i.openingBalance) || 0), 0);
+        const available = filteredInv.reduce((sum, i) => sum + (Number(i.availableQuantity) || 0), 0);
+        const assigned = filteredInv.reduce((sum, i) => sum + (Number(i.assignedQuantity) || 0), 0);
+        const expended = filteredInv.reduce((sum, i) => sum + (Number(i.expendedQuantity) || 0), 0);
+        const closing = filteredInv.reduce(
+          (sum, i) =>
+            sum +
+            (Number(i.closingBalance) ||
+              (Number(i.availableQuantity) || 0) + (Number(i.assignedQuantity) || 0)),
+          0
+        );
+
+        const purchases = filteredMov
+          .filter((m) => m.movementType === 'PURCHASE')
+          .reduce((sum, m) => sum + (Number(m.quantity) || 0), 0);
+
+        const transferIn = filteredMov
+          .filter((m) => m.movementType === 'TRANSFER_IN')
+          .reduce((sum, m) => sum + (Number(m.quantity) || 0), 0);
+
+        const transferOut = filteredMov
+          .filter((m) => m.movementType === 'TRANSFER_OUT')
+          .reduce((sum, m) => sum + (Number(m.quantity) || 0), 0);
+
+        const net = purchases + transferIn - transferOut;
+
+        kpiData = {
+          openingBalance: opening > 0 ? opening : (closing > 0 ? closing : available + assigned),
+          purchases: purchases,
+          transferIn: transferIn,
+          transferOut: transferOut,
+          netMovement: net,
+          assigned: assigned,
+          expended: expended,
+          closingBalance: closing > 0 ? closing : (available + assigned),
+        };
+      }
+
+      if (kpiData) {
+        setSummary((prev) => ({ ...prev, ...kpiData }));
       }
 
       // 2. Recent Movements
@@ -138,7 +198,6 @@ export const DashboardPage = () => {
       }
 
       // 4. Base Stock Levels aggregation from live inventory
-      const inventories = invRes?.data?.data || [];
       if (bases.length > 0) {
         const baseAgg = bases.map((b) => {
           const baseInv = inventories.filter((inv) => inv.baseId === b.id);
