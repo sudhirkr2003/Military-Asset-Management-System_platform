@@ -277,21 +277,9 @@ export const SettingsPage = () => {
     return { ...mod, endpoints: matched };
   }).filter((mod) => mod.endpoints.length > 0);
 
-  return (
+  const content = (
     <section
-      className="view-panel-container"
-      style={
-        location.pathname === '/public-docs'
-          ? {
-              maxWidth: '1360px',
-              margin: '0 auto',
-              padding: '24px 28px',
-              minHeight: '100vh',
-              background: '#f7faf5',
-              boxSizing: 'border-box'
-            }
-          : {}
-      }
+      className={`view-panel-container ${location.pathname === '/public-docs' ? 'public-docs-container' : ''}`}
     >
       {/* Top Navigation for Public Docs View */}
       {location.pathname === '/public-docs' && (
@@ -727,6 +715,12 @@ export const SettingsPage = () => {
       </div>
     </section>
   );
+
+  if (location.pathname === '/public-docs') {
+    return <div className="public-docs-page-wrapper">{content}</div>;
+  }
+
+  return content;
 };
 
 export default SettingsPage;
