@@ -370,7 +370,7 @@ export const DashboardLayout = () => {
             </NavLink>
           )}
 
-          <div className="nav-section-label" style={{ marginTop: '12px' }}>DEFENSE REGISTRY</div>
+          <div className="nav-section-label">DEFENSE REGISTRY</div>
 
           <NavLink
             to="/assets"
@@ -436,7 +436,7 @@ export const DashboardLayout = () => {
             </NavLink>
           )}
 
-          <div className="nav-section-label" style={{ marginTop: '12px' }}>INTELLIGENCE & DOCS</div>
+          <div className="nav-section-label">INTELLIGENCE & DOCS</div>
 
           <NavLink
             to="/reports"

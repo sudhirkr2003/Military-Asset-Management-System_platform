@@ -339,11 +339,11 @@ html, body {
 
 /* SIDEBAR (CLEAN & PRESTIGIOUS LIGHT DEFENSE COMMAND THEME) */
 .sidebar {
-  width: 255px;
-  flex: 0 0 255px;
+  width: 250px;
+  flex: 0 0 250px;
   background: linear-gradient(180deg, #ffffff 0%, #f9fbf8 100%);
   border-right: 1px solid #dce4d9;
-  padding: 16px 12px;
+  padding: 10px 8px 8px;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -373,17 +373,17 @@ html, body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 8px 14px;
+  gap: 10px;
+  padding: 2px 4px 8px;
   border-bottom: 1px solid #dce4d9;
-  margin-bottom: 12px;
+  margin-bottom: 5px;
   flex-shrink: 0;
 }
 
 .logo-shield {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: linear-gradient(135deg, #0e381d 0%, #061c0e 100%);
   border: 1.5px solid #d4af37;
   display: flex;
@@ -391,7 +391,7 @@ html, body {
   justify-content: center;
   box-shadow: 0 2px 8px rgba(14, 56, 29, 0.35);
   flex-shrink: 0;
-  padding: 3px;
+  padding: 2.5px;
   overflow: hidden;
 }
 
@@ -403,9 +403,9 @@ html, body {
 }
 
 .brand strong {
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: #172b1e;
   display: block;
 }
@@ -413,10 +413,10 @@ html, body {
 .brand small {
   display: block;
   color: #557060;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  margin-top: 1px;
+  letter-spacing: 0.02em;
+  margin-top: 0.5px;
 }
 
 .mobile-sidebar-close-btn {
@@ -425,7 +425,7 @@ html, body {
   background: transparent;
   border: none;
   color: #557060;
-  padding: 6px;
+  padding: 4px;
   border-radius: 6px;
   cursor: pointer;
 }
@@ -439,45 +439,51 @@ html, body {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1.5px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 2px;
-  margin-bottom: 10px;
+  padding-right: 1px;
+  margin-bottom: 4px;
 }
 
 .sidebar-nav::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
   background: #dce4d9;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .nav-section-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  color: #537060;
-  letter-spacing: 0.09em;
+  color: #4a6352;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 10px 10px 4px;
+  padding: 4px 6px 1px;
+  margin-top: 2px;
+}
+
+.nav-section-label:first-child {
+  padding-top: 1px;
+  margin-top: 0;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8.5px 12px;
-  border-radius: 8px;
+  gap: 9px;
+  padding: 5.5px 9px;
+  border-radius: 6px;
   color: #2e4336;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   transition: all 0.15s ease;
   cursor: pointer;
-  border-left: 3px solid transparent;
+  border-left: 2.5px solid transparent;
 }
 
 .nav-link:hover:not(.active) {
@@ -534,11 +540,11 @@ html, body {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 8px;
+  padding: 5px 8px;
   background: #f1f5ee;
   border: 1px solid #d5dfd3;
-  border-radius: 9px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
@@ -549,11 +555,11 @@ html, body {
 .sidebar-profile-card-btn.active {
   background: #ffffff;
   border-color: #1a6b3c;
-  box-shadow: 0 2px 10px rgba(26, 107, 60, 0.15);
+  box-shadow: 0 2px 8px rgba(26, 107, 60, 0.15);
 }
 
 .sidebar-profile-name {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #172b1e;
   line-height: 1.2;
@@ -563,7 +569,7 @@ html, body {
 }
 
 .sidebar-profile-role {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   color: #1a6b3c;
   line-height: 1.1;
@@ -572,19 +578,17 @@ html, body {
   text-overflow: ellipsis;
 }
 
-
-
 .sidebar-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   background: #edf3ea;
   border: 1.5px solid #1a6b3c;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   flex-shrink: 0;
 }
 
