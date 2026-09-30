@@ -27,9 +27,7 @@ import {
   PanelLeft,
   ChevronDown,
   ShieldCheck,
-  Plus,
-  Sun,
-  Moon
+  Plus
 } from 'lucide-react';
 
 export const DashboardLayout = () => {
@@ -479,65 +477,23 @@ export const DashboardLayout = () => {
             <ChevronDown size={14} className={`profile-chevron ${sidebarProfileOpen ? 'open' : ''}`} />
           </button>
 
-          {/* Floating Sidebar Profile Popover */}
+          {/* Floating Sidebar Profile Popover - ONLY LOGOUT */}
           {sidebarProfileOpen && (
-            <div className="sidebar-profile-popover">
-              <div className="dropdown-user-header">
-                <div className="dropdown-avatar-large">{getInitials(user?.fullName)}</div>
-                <div className="dropdown-user-details">
-                  <h4 className="dropdown-user-name">{user?.fullName || 'Chief Commander Admin'}</h4>
-                  <span className="dropdown-role-badge">
-                    {user?.role === 'ADMIN' ? 'HQ Supreme Admin' : user?.role?.replace('_', ' ') || 'HQ Supreme Admin'}
-                  </span>
-                  <div className="dropdown-meta-rows">
-                    <div className="dropdown-meta-item">
-                      <span>Clearance:</span> <strong>{userRole === 'ADMIN' ? 'ADMIN' : userRole || 'LEVEL-4'}</strong>
-                    </div>
-                    <div className="dropdown-meta-item">
-                      <span>Security:</span> <strong>TLS 1.3 / AES-256</strong>
-                    </div>
-                    {user?.baseId && (
-                      <div className="dropdown-meta-item">
-                        <span>Base Station:</span> <strong>{bases.find((b) => b.id === user.baseId)?.name || 'HQ Base'}</strong>
-                      </div>
-                    )}
-                  </div>
+            <div className="sidebar-profile-popover" style={{ padding: '6px' }}>
+              <button
+                className="dropdown-item dropdown-logout-btn"
+                onClick={() => {
+                  setSidebarProfileOpen(false);
+                  logout();
+                }}
+                type="button"
+                style={{ width: '100%', padding: '10px 12px' }}
+              >
+                <div className="dropdown-item-left">
+                  <LogOut size={15} />
+                  <span>Sign Out / Logout</span>
                 </div>
-              </div>
-
-              <div className="dropdown-divider" />
-
-              <div className="dropdown-section">
-                <button
-                  className="dropdown-item"
-                  onClick={() => toggleTheme()}
-                  type="button"
-                >
-                  <div className="dropdown-item-left">
-                    {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
-                    <span>{theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}</span>
-                  </div>
-                  <span className="dropdown-theme-pill">{theme === 'light' ? 'Light' : 'Dark'}</span>
-                </button>
-              </div>
-
-              <div className="dropdown-divider" />
-
-              <div className="dropdown-section">
-                <button
-                  className="dropdown-item dropdown-logout-btn"
-                  onClick={() => {
-                    setSidebarProfileOpen(false);
-                    logout();
-                  }}
-                  type="button"
-                >
-                  <div className="dropdown-item-left">
-                    <LogOut size={15} />
-                    <span>Sign Out / Lock Terminal</span>
-                  </div>
-                </button>
-              </div>
+              </button>
             </div>
           )}
         </div>
@@ -592,22 +548,21 @@ export const DashboardLayout = () => {
               <Plus size={13} /> <span className="btn-text">Record Movement</span>
             </button>
 
-            {/* Topbar Profile Trigger Button - Compact 'CA' Avatar */}
+            {/* Topbar Profile Trigger Button - Circular 'CA' Avatar */}
             <button
-              className={`topbar-avatar-btn ${profileMenuOpen ? 'active' : ''}`}
+              className={`topbar-avatar-btn circular-profile-btn ${profileMenuOpen ? 'active' : ''}`}
               onClick={() => setProfileMenuOpen((prev) => !prev)}
               aria-expanded={profileMenuOpen}
               aria-label="User Profile and Defense Controls"
-              title="View Profile (Chief Commander Admin)"
+              title={`View Profile (${user?.fullName || 'Chief Commander Admin'})`}
               type="button"
             >
-              <div className="avatar">{getInitials(user?.fullName)}</div>
-              <ChevronDown size={13} className={`profile-chevron ${profileMenuOpen ? 'open' : ''}`} />
+              <div className="avatar circular-avatar">{getInitials(user?.fullName)}</div>
             </button>
 
             {/* Floating Profile Dropdown Menu */}
             {profileMenuOpen && (
-              <div className="profile-dropdown-menu">
+              <div className="profile-dropdown-menu" style={{ width: '240px' }}>
                 <div className="dropdown-user-header">
                   <div className="dropdown-avatar-large">
                     {getInitials(user?.fullName)}
@@ -617,36 +572,7 @@ export const DashboardLayout = () => {
                     <span className="dropdown-role-badge">
                       {user?.role === 'ADMIN' ? 'HQ Supreme Admin' : user?.role?.replace('_', ' ') || 'HQ Supreme Admin'}
                     </span>
-                    <div className="dropdown-meta-rows">
-                      <div className="dropdown-meta-item">
-                        <span>Clearance:</span> <strong>{userRole === 'ADMIN' ? 'ADMIN' : userRole || 'LEVEL-4'}</strong>
-                      </div>
-                      <div className="dropdown-meta-item">
-                        <span>Security:</span> <strong>TLS 1.3 / AES-256</strong>
-                      </div>
-                      {user?.baseId && (
-                        <div className="dropdown-meta-item">
-                          <span>Base Station:</span> <strong>{bases.find((b) => b.id === user.baseId)?.name || 'HQ Base'}</strong>
-                        </div>
-                      )}
-                    </div>
                   </div>
-                </div>
-
-                <div className="dropdown-divider" />
-
-                <div className="dropdown-section">
-                  <button
-                    className="dropdown-item"
-                    onClick={() => toggleTheme()}
-                    type="button"
-                  >
-                    <div className="dropdown-item-left">
-                      {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
-                      <span>{theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}</span>
-                    </div>
-                    <span className="dropdown-theme-pill">{theme === 'light' ? 'Light' : 'Dark'}</span>
-                  </button>
                 </div>
 
                 <div className="dropdown-divider" />
@@ -662,7 +588,7 @@ export const DashboardLayout = () => {
                   >
                     <div className="dropdown-item-left">
                       <LogOut size={15} />
-                      <span>Sign Out / Lock Terminal</span>
+                      <span>Sign Out / Logout</span>
                     </div>
                   </button>
                 </div>

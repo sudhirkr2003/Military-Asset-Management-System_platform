@@ -18,6 +18,7 @@ import {
   Box,
   Layers
 } from 'lucide-react';
+import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const AssetsPage = () => {
   const { user } = useAuth();
@@ -262,61 +263,49 @@ export const AssetsPage = () => {
         </div>
       </div>
 
-      {/* Filter & Search Toolbar */}
-      <div className="filter-toolbar">
-        <div className="filter-search-wrap">
-          <Search size={14} className="filter-search-icon" />
-          <input
-            type="text"
-            placeholder="Search assets by name, code (e.g. WPN, T-90)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="filter-search-input"
-          />
-        </div>
-
-        <div className="filter-item-group">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Category"
-          >
-            {categories.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-item-group">
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Status"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active Only</option>
-            <option value="INACTIVE">Inactive Only</option>
-          </select>
-        </div>
-
-        {(searchTerm !== '' || selectedCategory !== 'ALL' || selectedStatus !== 'ALL') && (
-          <button
-            className="filter-reset-btn"
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedCategory('ALL');
-              setSelectedStatus('ALL');
-            }}
-            title="Clear filters"
-          >
-            ✕ Reset
-          </button>
-        )}
-      </div>
+      {/* Unified Filter & Search Toolbar */}
+      <UnifiedFilterToolbar
+        searchPlaceholder="Search assets by name, code (e.g. WPN, T-90)..."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={[
+          {
+            id: 'category',
+            icon: Crosshair,
+            iconColor: 'var(--yellow)',
+            value: selectedCategory,
+            onChange: setSelectedCategory,
+            ariaLabel: 'Filter by Category',
+            options: categories
+          },
+          {
+            id: 'status',
+            icon: Shield,
+            iconColor: 'var(--green)',
+            value: selectedStatus,
+            onChange: setSelectedStatus,
+            ariaLabel: 'Filter by Status',
+            options: [
+              { value: 'ALL', label: 'All Statuses' },
+              { value: 'ACTIVE', label: 'Active Only' },
+              { value: 'INACTIVE', label: 'Inactive Only' }
+            ]
+          }
+        ]}
+        onRefresh={fetchEquipment}
+        loading={loading}
+        refreshLabel="Refresh"
+        hasActiveFilters={
+          searchTerm !== '' ||
+          selectedCategory !== 'ALL' ||
+          selectedStatus !== 'ALL'
+        }
+        onReset={() => {
+          setSearchTerm('');
+          setSelectedCategory('ALL');
+          setSelectedStatus('ALL');
+        }}
+      />
 
       {/* Asset Table */}
       <div className="view-table-card">

@@ -14,6 +14,7 @@ import {
   Layers,
   FileText
 } from 'lucide-react';
+import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const PurchasesPage = () => {
   const [purchases, setPurchases] = useState([]);
@@ -95,9 +96,9 @@ export const PurchasesPage = () => {
       id: tempId,
       timestamp: new Date().toISOString(),
       baseId: Number(formData.baseId),
-      baseName: selectedBaseObj?.name || 'Base #' + formData.baseId,
+      baseName: selectedBaseObj?.name || 'Base ' + formData.baseId,
       equipmentTypeId: Number(formData.equipmentTypeId),
-      equipmentName: selectedEqObj?.name || 'Equipment #' + formData.equipmentTypeId,
+      equipmentName: selectedEqObj?.name || 'Equipment ' + formData.equipmentTypeId,
       equipmentCategory: selectedEqObj?.category || 'EQUIPMENT',
       quantity: Number(formData.quantity),
       movementType: 'PURCHASE',
@@ -234,7 +235,7 @@ export const PurchasesPage = () => {
         <div className="subpage-stat-card">
           <div className="subpage-stat-info">
             <span className="subpage-stat-label">Units Procured</span>
-            <span className="subpage-stat-val" style={{ color: '#4ade80' }}>
+            <span className="subpage-stat-val" style={{ color: 'var(--green)' }}>
               +{totalQuantity.toLocaleString()}
             </span>
             <span className="subpage-stat-badge green">▲ Added to Stock</span>
@@ -409,92 +410,66 @@ export const PurchasesPage = () => {
         </div>
       )}
 
-      {/* Filter & Search Toolbar */}
-      <div className="filter-toolbar">
-        {/* Search */}
-        <div className="filter-search-wrap">
-          <Search size={14} className="filter-search-icon" />
-          <input
-            type="text"
-            placeholder="Search invoice, remarks, asset..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="filter-search-input"
-          />
-        </div>
-
-        {/* Base Filter */}
-        <div className="filter-item-group">
-          <Building size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-          <select
-            value={selectedBase}
-            onChange={(e) => setSelectedBase(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Base"
-          >
-            <option value="ALL">All Bases ({bases.length})</option>
-            {bases.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Equipment Filter */}
-        <div className="filter-item-group">
-          <Shield size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-          <select
-            value={selectedEquipment}
-            onChange={(e) => setSelectedEquipment(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Equipment Type"
-          >
-            <option value="ALL">All Equipment ({equipmentTypes.length})</option>
-            {equipmentTypes.map((eq) => (
-              <option key={eq.id} value={eq.id}>
-                {eq.name} ({eq.category})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Date Range */}
-        <div className="filter-date-wrap">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="filter-date-input"
-            title="Start Date"
-          />
-          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="filter-date-input"
-            title="End Date"
-          />
-        </div>
-
-        {/* Reset Filter Button */}
-        {(selectedBase !== 'ALL' || selectedEquipment !== 'ALL' || startDate !== '' || endDate !== '' || searchQuery !== '') && (
-          <button
-            className="filter-reset-btn"
-            onClick={() => {
-              setSelectedBase('ALL');
-              setSelectedEquipment('ALL');
-              setStartDate('');
-              setEndDate('');
-              setSearchQuery('');
-            }}
-            title="Clear all filters"
-          >
-            ✕ Reset
-          </button>
-        )}
-      </div>
+      {/* Unified Filter & Search Toolbar */}
+      <UnifiedFilterToolbar
+        searchPlaceholder="Search invoice, remarks, asset..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        filters={[
+          {
+            id: 'base',
+            icon: Building,
+            iconColor: 'var(--blue)',
+            value: selectedBase,
+            onChange: setSelectedBase,
+            ariaLabel: 'Filter by Base',
+            options: [
+              { value: 'ALL', label: `All Bases (${bases.length})` },
+              ...bases.map((b) => ({ value: b.id, label: b.name }))
+            ]
+          },
+          {
+            id: 'equipmentType',
+            icon: Shield,
+            iconColor: 'var(--yellow)',
+            value: selectedEquipment,
+            onChange: setSelectedEquipment,
+            ariaLabel: 'Filter by Equipment Type',
+            options: [
+              { value: 'ALL', label: `All Equipment (${equipmentTypes.length})` },
+              ...equipmentTypes.map((eq) => ({
+                value: eq.id,
+                label: `${eq.name} (${eq.category})`
+              }))
+            ]
+          }
+        ]}
+        dateRange={{
+          startDate,
+          onStartDateChange: setStartDate,
+          endDate,
+          onEndDateChange: setEndDate,
+          startTitle: 'Start Date',
+          endTitle: 'End Date'
+        }}
+        onRefresh={fetchPurchases}
+        loading={loading}
+        refreshLabel="Refresh"
+        hasActiveFilters={
+          selectedBase !== 'ALL' ||
+          selectedEquipment !== 'ALL' ||
+          Boolean(startDate) ||
+          Boolean(endDate) ||
+          Boolean(searchQuery)
+        }
+        onReset={() => {
+          setSelectedBase('ALL');
+          setSelectedEquipment('ALL');
+          setStartDate('');
+          setEndDate('');
+          setSearchQuery('');
+        }}
+      />
 
       {/* Historical Purchases Table */}
       <div className="view-table-card">
@@ -517,9 +492,9 @@ export const PurchasesPage = () => {
               filteredPurchases.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 400 }}>
-                      #PUR-{p.id}
-                    </span>
+                    <strong style={{ fontFamily: 'monospace', color: 'var(--blue)', fontWeight: 600 }}>
+                      {p.id}
+                    </strong>
                   </td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>

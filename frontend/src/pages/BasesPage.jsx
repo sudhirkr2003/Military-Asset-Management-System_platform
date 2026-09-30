@@ -14,6 +14,7 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
+import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const BasesPage = () => {
   const { user } = useAuth();
@@ -146,33 +147,18 @@ export const BasesPage = () => {
         </div>
       </div>
 
-      {/* Filter & Search Toolbar */}
-      <div className="filter-toolbar">
-        <div className="filter-search-wrap">
-          <Search size={14} className="filter-search-icon" />
-          <input
-            type="text"
-            placeholder="Search bases by name, code (e.g. ALP01), sector location, commander..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="filter-search-input"
-          />
-        </div>
-
-        <span style={{ fontSize: '11.5px', color: 'var(--muted)', marginLeft: 'auto', fontWeight: 500 }}>
-          {filteredBases.length} Active Installations
-        </span>
-
-        {searchTerm && (
-          <button
-            className="filter-reset-btn"
-            onClick={() => setSearchTerm('')}
-            title="Clear search"
-          >
-            ✕ Reset
-          </button>
-        )}
-      </div>
+      {/* Unified Filter & Search Toolbar */}
+      <UnifiedFilterToolbar
+        searchPlaceholder="Search bases by name, code (e.g. ALP01), sector location, commander..."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        onRefresh={fetchBasesData}
+        loading={loading}
+        refreshLabel="Refresh Bases"
+        infoBadge={`${filteredBases.length} Active Installations`}
+        hasActiveFilters={Boolean(searchTerm)}
+        onReset={() => setSearchTerm('')}
+      />
 
       {/* Bases Grid */}
       <div className="catalog-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
@@ -187,19 +173,15 @@ export const BasesPage = () => {
 
             return (
               <div key={b.id} className="catalog-card" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <div className="catalog-icon" style={{ background: 'rgba(36, 153, 255, 0.15)', color: 'var(--blue)' }}>
-                    <Building className="w-5 h-5" />
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '8px' }}>
+                  <h3 style={{ fontSize: '1.15rem', color: 'var(--text-heading)', margin: 0, fontWeight: 700 }}>{b.name}</h3>
                   <span
                     className="pill pgreen"
-                    style={{ fontSize: '10px', textTransform: 'uppercase' }}
+                    style={{ fontSize: '10px', textTransform: 'uppercase', flexShrink: 0 }}
                   >
                     {b.status || 'ACTIVE'}
                   </span>
                 </div>
-
-                <h3 style={{ fontSize: '1.15rem', color: 'var(--text-heading)', marginBottom: '6px' }}>{b.name}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px', color: 'var(--muted)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Shield className="w-3.5 h-3.5 text-blue" style={{ color: 'var(--blue)' }} />

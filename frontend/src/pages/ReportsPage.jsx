@@ -12,8 +12,10 @@ import {
   Building,
   CheckCircle,
   Clock,
-  ArrowRight
+  ArrowRight,
+  ArrowRightLeft
 } from 'lucide-react';
+import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const ReportsPage = () => {
   const [activeTab, setActiveTab] = useState('movements'); // 'movements' | 'expenditures' | 'inventory'
@@ -158,128 +160,97 @@ export const ReportsPage = () => {
       </div>
 
       {/* Report Switcher Tabs */}
-      <div
-        className="modal-tabs"
-        style={{
-          borderRadius: '10px',
-          border: '1px solid var(--line)',
-          marginBottom: '1.25rem',
-          background: 'var(--panel)',
-          padding: '4px',
-        }}
-      >
+      <div className="report-switcher-tabs">
         <button
-          className={`tab-btn ${activeTab === 'movements' ? 'active' : ''}`}
+          className={`report-tab-btn ${activeTab === 'movements' ? 'active' : ''}`}
           onClick={() => setActiveTab('movements')}
         >
-          <FileText className="w-3.5 h-3.5 mr-1.5 inline" /> Movement & Procurement Audit
+          <FileText size={16} className="report-tab-icon" />
+          <span>Movement & Procurement Audit</span>
         </button>
         <button
-          className={`tab-btn ${activeTab === 'expenditures' ? 'active' : ''}`}
+          className={`report-tab-btn ${activeTab === 'expenditures' ? 'active' : ''}`}
           onClick={() => setActiveTab('expenditures')}
         >
-          <Flame className="w-3.5 h-3.5 mr-1.5 inline" /> Ammunition & Fuel Expenditure
+          <Flame size={16} className="report-tab-icon" />
+          <span>Ammunition & Fuel Expenditure</span>
         </button>
         <button
-          className={`tab-btn ${activeTab === 'inventory' ? 'active' : ''}`}
+          className={`report-tab-btn ${activeTab === 'inventory' ? 'active' : ''}`}
           onClick={() => setActiveTab('inventory')}
         >
-          <Building className="w-3.5 h-3.5 mr-1.5 inline" /> Base Armory Inventory Audit
+          <Building size={16} className="report-tab-icon" />
+          <span>Base Armory Inventory Audit</span>
         </button>
       </div>
 
       {/* Filter Controls */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1rem',
-          background: 'var(--panel)',
-          padding: '14px 16px',
-          borderRadius: '10px',
-          border: '1px solid var(--line)',
+      {/* Unified Filter & Scope Toolbar */}
+      <UnifiedFilterToolbar
+        style={{ marginBottom: '1.25rem' }}
+        filters={[
+          {
+            id: 'base',
+            icon: Building,
+            iconColor: 'var(--blue)',
+            value: selectedBase,
+            onChange: setSelectedBase,
+            ariaLabel: 'Filter by Base',
+            options: [
+              { value: 'ALL', label: `All Bases & Depots (${bases.length})` },
+              ...bases.map((b) => ({ value: b.id, label: b.name }))
+            ]
+          },
+          ...(activeTab === 'movements'
+            ? [
+                {
+                  id: 'movementType',
+                  icon: ArrowRightLeft,
+                  iconColor: 'var(--yellow)',
+                  value: selectedType,
+                  onChange: setSelectedType,
+                  ariaLabel: 'Filter by Movement Type',
+                  options: [
+                    { value: 'ALL', label: 'All Movement Types' },
+                    { value: 'PURCHASE', label: 'Purchases Only' },
+                    { value: 'TRANSFER_OUT', label: 'Transfer Out Only' },
+                    { value: 'TRANSFER_IN', label: 'Transfer In Only' },
+                    { value: 'ASSIGNMENT', label: 'Personnel Assignments' },
+                    { value: 'RETURN', label: 'Returns' },
+                    { value: 'EXPENDITURE', label: 'Expenditures Only' }
+                  ]
+                }
+              ]
+            : [])
+        ]}
+        dateRange={
+          activeTab !== 'inventory'
+            ? {
+                startDate,
+                onStartDateChange: setStartDate,
+                endDate,
+                onEndDateChange: setEndDate,
+                startTitle: 'From Date',
+                endTitle: 'To Date'
+              }
+            : undefined
+        }
+        onRefresh={fetchReportData}
+        loading={loading}
+        refreshLabel="Update Report"
+        hasActiveFilters={
+          selectedBase !== 'ALL' ||
+          selectedType !== 'ALL' ||
+          Boolean(startDate) ||
+          Boolean(endDate)
+        }
+        onReset={() => {
+          setSelectedBase('ALL');
+          setSelectedType('ALL');
+          setStartDate('');
+          setEndDate('');
         }}
-      >
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div>
-            <label style={{ fontSize: '10px', color: 'var(--muted)', display: 'block', marginBottom: '3px' }}>
-              Base Installation
-            </label>
-            <select
-              value={selectedBase}
-              onChange={(e) => setSelectedBase(e.target.value)}
-              className="modal-select"
-              style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
-            >
-              <option value="ALL">All Bases & Depots</option>
-              {bases.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {activeTab === 'movements' && (
-            <div>
-              <label style={{ fontSize: '10px', color: 'var(--muted)', display: 'block', marginBottom: '3px' }}>
-                Movement Type
-              </label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="modal-select"
-                style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
-              >
-                <option value="ALL">All Movement Types</option>
-                <option value="PURCHASE">Purchases Only</option>
-                <option value="TRANSFER_OUT">Transfer Out Only</option>
-                <option value="TRANSFER_IN">Transfer In Only</option>
-                <option value="ASSIGNMENT">Personnel Assignments</option>
-                <option value="RETURN">Returns</option>
-                <option value="EXPENDITURE">Expenditures Only</option>
-              </select>
-            </div>
-          )}
-
-          {activeTab !== 'inventory' && (
-            <>
-              <div>
-                <label style={{ fontSize: '10px', color: 'var(--muted)', display: 'block', marginBottom: '3px' }}>
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="modal-input"
-                  style={{ width: 'auto', padding: '5px 10px', fontSize: '11px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '10px', color: 'var(--muted)', display: 'block', marginBottom: '3px' }}>
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="modal-input"
-                  style={{ width: 'auto', padding: '5px 10px', fontSize: '11px' }}
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        <button className="btn-secondary" onClick={fetchReportData} disabled={loading}>
-          <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> Update Report
-        </button>
-      </div>
+      />
 
       {/* Summary KPI Cards */}
       {activeTab === 'movements' && (
@@ -366,7 +337,7 @@ export const ReportsPage = () => {
                 movementReports.map((m) => (
                   <tr key={m.id}>
                     <td>
-                      <strong style={{ fontFamily: 'monospace', color: 'var(--blue)' }}>#{m.id}</strong>
+                      <strong style={{ fontFamily: 'monospace', color: 'var(--blue)' }}>{m.id}</strong>
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
@@ -446,7 +417,7 @@ export const ReportsPage = () => {
                 expenditureReports.map((e) => (
                   <tr key={e.id}>
                     <td>
-                      <strong style={{ fontFamily: 'monospace', color: 'var(--yellow)' }}>#EXP-{e.id}</strong>
+                      <strong style={{ fontFamily: 'monospace', color: 'var(--yellow)' }}>{e.id}</strong>
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>

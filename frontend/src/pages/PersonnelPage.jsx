@@ -20,6 +20,7 @@ import {
   Key,
   Lock
 } from 'lucide-react';
+import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const PersonnelPage = () => {
   const { user } = useAuth();
@@ -323,77 +324,68 @@ export const PersonnelPage = () => {
         </div>
       </div>
 
-      {/* Filter & Search Toolbar */}
-      <div className="filter-toolbar">
-        <div className="filter-search-wrap">
-          <Search size={14} className="filter-search-icon" />
-          <input
-            type="text"
-            placeholder="Search by name, service ID, email, or base..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="filter-search-input"
-          />
-        </div>
-
-        <div className="filter-item-group">
-          <select
-            value={selectedBase}
-            onChange={(e) => setSelectedBase(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Base"
-          >
-            <option value="ALL">All Bases & Depots ({bases.length})</option>
-            {bases.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-item-group">
-          <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Role"
-          >
-            <option value="ALL">All Roles</option>
-            <option value="ADMIN">HQ ADMIN</option>
-            <option value="BASE_COMMANDER">BASE COMMANDER</option>
-            <option value="LOGISTICS_OFFICER">LOGISTICS OFFICER</option>
-          </select>
-        </div>
-
-        <div className="filter-item-group">
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Status"
-          >
-            <option value="ALL">All Status</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
-
-        {(searchTerm !== '' || selectedBase !== 'ALL' || selectedRole !== 'ALL' || selectedStatus !== 'ALL') && (
-          <button
-            className="filter-reset-btn"
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedBase('ALL');
-              setSelectedRole('ALL');
-              setSelectedStatus('ALL');
-            }}
-            title="Clear filters"
-          >
-            ✕ Reset
-          </button>
-        )}
-      </div>
+      {/* Unified Filter & Search Toolbar */}
+      <UnifiedFilterToolbar
+        searchPlaceholder="Search by name, service ID, email, or base..."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={[
+          {
+            id: 'base',
+            icon: Building,
+            iconColor: 'var(--blue)',
+            value: selectedBase,
+            onChange: setSelectedBase,
+            ariaLabel: 'Filter by Base',
+            options: [
+              { value: 'ALL', label: `All Bases & Depots (${bases.length})` },
+              ...bases.map((b) => ({ value: b.id, label: b.name }))
+            ]
+          },
+          {
+            id: 'role',
+            icon: Users,
+            iconColor: 'var(--purple)',
+            value: selectedRole,
+            onChange: setSelectedRole,
+            ariaLabel: 'Filter by Role',
+            options: [
+              { value: 'ALL', label: 'All Roles' },
+              { value: 'ADMIN', label: 'HQ ADMIN' },
+              { value: 'BASE_COMMANDER', label: 'BASE COMMANDER' },
+              { value: 'LOGISTICS_OFFICER', label: 'LOGISTICS OFFICER' }
+            ]
+          },
+          {
+            id: 'status',
+            icon: Shield,
+            iconColor: 'var(--green)',
+            value: selectedStatus,
+            onChange: setSelectedStatus,
+            ariaLabel: 'Filter by Status',
+            options: [
+              { value: 'ALL', label: 'All Status' },
+              { value: 'ACTIVE', label: 'ACTIVE' },
+              { value: 'INACTIVE', label: 'INACTIVE' }
+            ]
+          }
+        ]}
+        onRefresh={fetchPersonnelAndBases}
+        loading={loading}
+        refreshLabel="Refresh"
+        hasActiveFilters={
+          searchTerm !== '' ||
+          selectedBase !== 'ALL' ||
+          selectedRole !== 'ALL' ||
+          selectedStatus !== 'ALL'
+        }
+        onReset={() => {
+          setSearchTerm('');
+          setSelectedBase('ALL');
+          setSelectedRole('ALL');
+          setSelectedStatus('ALL');
+        }}
+      />
 
       {/* Personnel Roster Table */}
       <div className="view-table-card">

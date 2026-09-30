@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import api from '../services/api';
-import heroAirfield from '../assets/hero_airfield.jpg';
+import heroDaylight from '../assets/hero_daylight_command.jpg';
 import {
   Send,
   Package,
@@ -22,7 +22,9 @@ import {
   Shield,
   ShoppingBag,
   Truck,
-  Radio
+  Radio,
+  ChevronDown,
+  Calendar
 } from 'lucide-react';
 
 const BASE_COLORS = ['#299cff', '#18d69d', '#ffc033', '#a855f7', '#ec4899', '#3b82f6'];
@@ -32,6 +34,7 @@ export const DashboardPage = () => {
   const [selectedBase, setSelectedBase] = useState('ALL');
   const [selectedEquipment, setSelectedEquipment] = useState('ALL');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   // Metadata Lists
   const [bases, setBases] = useState([]);
@@ -197,49 +200,86 @@ export const DashboardPage = () => {
     });
   }, [recentMovements, netMovementFilter]);
 
+  const totalCategoryItems = useMemo(
+    () =>
+      (categoryCounts.VEHICLE || 0) +
+      (categoryCounts.WEAPON || 0) +
+      (categoryCounts.AMMUNITION || 0) +
+      (categoryCounts.COMMUNICATION_EQUIPMENT || 0) +
+      (categoryCounts.OTHER || 0),
+    [categoryCounts]
+  );
+
+  const categoriesConfig = useMemo(
+    () => [
+      { key: 'VEHICLE', label: 'Vehicles', count: categoryCounts.VEHICLE || 0, icon: Truck, color: '#0284c7', barClass: 'bar1' },
+      { key: 'WEAPON', label: 'Weapons', count: categoryCounts.WEAPON || 0, icon: Crosshair, color: '#059669', barClass: 'bar2' },
+      { key: 'AMMUNITION', label: 'Ammunition', count: categoryCounts.AMMUNITION || 0, icon: Package, color: '#d97706', barClass: 'bar3' },
+      { key: 'COMMUNICATION_EQUIPMENT', label: 'Comms', count: categoryCounts.COMMUNICATION_EQUIPMENT || 0, icon: Radio, color: '#7c3aed', barClass: 'bar4' },
+      { key: 'OTHER', label: 'Other', count: categoryCounts.OTHER || 0, icon: Layers, color: '#db2777', barClass: 'bar5' },
+    ],
+    [categoryCounts]
+  );
+
   return (
     <>
-      {/* Hero Section */}
+      {/* 1. Hero Section (Clear Unobstructed Daylight Command Banner) */}
       <section
-        className="hero"
+        className="hero hero-light-banner"
         style={{
-          backgroundImage: `linear-gradient(90deg, rgba(4,14,21,.90), rgba(4,14,21,.30)), url(${heroAirfield})`,
+          backgroundImage: `linear-gradient(90deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.82) 45%, rgba(255, 255, 255, 0.35) 100%), url(${heroDaylight})`,
         }}
       >
         <div className="hero-content">
-          <p>Good Morning,</p>
-          <h1>
+          <p className="hero-greeting">Good Morning,</p>
+          <h1 className="hero-title">
             Chief <span>Commander</span>
           </h1>
-          <small>
+          <small className="hero-desc">
             Real-time defense readiness, procurement ledger, inter-base asset transfers, and live inventory control.
           </small>
         </div>
+      </section>
 
-        {/* Top Interactive Dashboard Filter Bar */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '10px',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            background: 'rgba(9, 24, 33, 0.9)',
-            padding: '10px 14px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(10px)',
-          }}
-        >
+      {/* 2. Dedicated Single-Line Filter Toolbar (Positioned Upon KPI Boxes) */}
+      <div className="dashboard-filter-toolbar">
+        {/* Mobile Filter Toggle Header */}
+        <div className="dashboard-filter-mobile-bar">
+          <button
+            type="button"
+            className={`dashboard-filter-toggle-btn ${mobileFilterOpen ? 'active' : ''}`}
+            onClick={() => setMobileFilterOpen((prev) => !prev)}
+            aria-label="Toggle Filter Controls"
+          >
+            <Filter size={14} />
+            <span>Filters & Scope</span>
+            {(selectedBase !== 'ALL' || selectedEquipment !== 'ALL' || selectedPeriod !== 'all') && (
+              <span className="filter-active-pill">Active</span>
+            )}
+            <ChevronDown size={14} className={`filter-chevron ${mobileFilterOpen ? 'open' : ''}`} />
+          </button>
+          <button
+            className="hero-refresh-btn mobile-refresh-btn"
+            onClick={fetchDashboardData}
+            disabled={loading}
+            title="Refresh Live Metrics"
+          >
+            <RefreshCw size={13} className={loading ? 'spin' : ''} />
+          </button>
+        </div>
+
+        {/* Filters Row: One clean horizontal line on desktop, expandable on mobile */}
+        <div className={`dashboard-filters-inline ${mobileFilterOpen ? 'mobile-expanded' : ''}`}>
           {/* Base Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Building className="w-3.5 h-3.5 text-blue" style={{ color: 'var(--blue)' }} />
+          <div className="dashboard-filter-item">
+            <Building size={14} style={{ color: 'var(--blue)', flexShrink: 0 }} />
             <select
               value={selectedBase}
               onChange={(e) => setSelectedBase(e.target.value)}
-              className="modal-select"
-              style={{ width: 'auto', padding: '5px 10px', fontSize: '11px' }}
+              className="dashboard-select"
+              aria-label="Filter by Base"
             >
-              <option value="ALL">All Bases & Depots</option>
+              <option value="ALL">All Bases & Depots ({bases.length})</option>
               {bases.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -249,15 +289,15 @@ export const DashboardPage = () => {
           </div>
 
           {/* Equipment Type Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Crosshair className="w-3.5 h-3.5 text-yellow" style={{ color: 'var(--yellow)' }} />
+          <div className="dashboard-filter-item">
+            <Crosshair size={14} style={{ color: 'var(--yellow)', flexShrink: 0 }} />
             <select
               value={selectedEquipment}
               onChange={(e) => setSelectedEquipment(e.target.value)}
-              className="modal-select"
-              style={{ width: 'auto', padding: '5px 10px', fontSize: '11px' }}
+              className="dashboard-select"
+              aria-label="Filter by Equipment Type"
             >
-              <option value="ALL">All Equipment Types</option>
+              <option value="ALL">All Equipment Types ({equipmentList.length})</option>
               {equipmentList.map((eq) => (
                 <option key={eq.id} value={eq.id}>
                   {eq.name} ({eq.code})
@@ -267,12 +307,13 @@ export const DashboardPage = () => {
           </div>
 
           {/* Period Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="dashboard-filter-item">
+            <Calendar size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="modal-select"
-              style={{ width: 'auto', padding: '5px 10px', fontSize: '11px' }}
+              className="dashboard-select"
+              aria-label="Filter by Period"
             >
               <option value="all">All-Time Cumulative</option>
               <option value="today">Today</option>
@@ -282,44 +323,48 @@ export const DashboardPage = () => {
           </div>
 
           <button
-            className="btn-secondary"
+            className="hero-refresh-btn desktop-refresh-btn"
             onClick={fetchDashboardData}
             disabled={loading}
-            style={{ padding: '5px 10px', fontSize: '11px' }}
+            title="Refresh Live Metrics"
           >
-            <RefreshCw className={`w-3 h-3 inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
           </button>
         </div>
-      </section>
+      </div>
 
-      {/* 6 Key Metrics Grid (Pure Live Data with Clickable Net Movement Bonus) */}
+      {/* 3. 6 Key Metrics Grid (Compact Executive Cards with Right-Aligned Badges) */}
       <section className="metrics">
         {/* Metric 1: Opening Balance */}
         <article className="metric">
-          <div className="icon icon-blue">
-            <Shield className="w-4 h-4" />
+          <div className="metric-header">
+            <label>Opening Balance</label>
+            <div className="icon icon-blue" title="Opening Balance">
+              <Shield size={14} />
+            </div>
           </div>
-          <label>Opening Balance</label>
-          <strong>{formatNumber(summary.openingBalance)}</strong>
+          <strong className="metric-value">{formatNumber(summary.openingBalance)}</strong>
           <small>
             <span>Initial Armory Stock</span>
             <b className="metric-badge green">{summary.openingBalance > 0 ? 'Active' : '0'}</b>
           </small>
         </article>
 
-        {/* Metric 2: Net Movement [BONUS FEATURE: Clickable Modal Breakdown] */}
+        {/* Metric 2: Net Movement [Interactive Modal Breakdown] */}
         <article
           className="metric metric-interactive"
           onClick={() => setShowNetMovementModal(true)}
           title="Click to view detailed Net Movement breakdown (Purchases + Transfer In - Transfer Out)"
         >
-          <div className="icon icon-green">
-            <ArrowRightLeft className="w-4 h-4" />
+          <div className="metric-header">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Net Movement <Info size={11} className="text-green" />
+            </label>
+            <div className="icon icon-green" title="Net Movement Audit">
+              <ArrowRightLeft size={14} />
+            </div>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Net Movement <Info className="w-3 h-3 text-green" />
-          </label>
-          <strong style={{ color: summary.netMovement >= 0 ? 'var(--green)' : 'var(--red)' }}>
+          <strong className="metric-value" style={{ color: summary.netMovement >= 0 ? 'var(--green)' : 'var(--red)' }}>
             {summary.netMovement > 0 ? `+${formatNumber(summary.netMovement)}` : formatNumber(summary.netMovement)}
           </strong>
           <small>
@@ -330,11 +375,13 @@ export const DashboardPage = () => {
 
         {/* Metric 3: Purchases */}
         <article className="metric">
-          <div className="icon icon-blue">
-            <ShoppingBag className="w-4 h-4" />
+          <div className="metric-header">
+            <label>Purchases</label>
+            <div className="icon icon-blue" title="Purchases">
+              <ShoppingBag size={14} />
+            </div>
           </div>
-          <label>Purchases</label>
-          <strong style={{ color: 'var(--blue)' }}>+{formatNumber(summary.purchases)}</strong>
+          <strong className="metric-value" style={{ color: 'var(--blue)' }}>+{formatNumber(summary.purchases)}</strong>
           <small>
             <span>Procured to Armory</span>
             <b className="metric-badge blue">{summary.purchases > 0 ? `+${summary.purchases}` : '0'}</b>
@@ -343,11 +390,13 @@ export const DashboardPage = () => {
 
         {/* Metric 4: Assigned Assets */}
         <article className="metric">
-          <div className="icon icon-yellow">
-            <Users className="w-4 h-4" />
+          <div className="metric-header">
+            <label>Assigned to Troops</label>
+            <div className="icon icon-yellow" title="Assigned Assets">
+              <Users size={14} />
+            </div>
           </div>
-          <label>Assigned to Troops</label>
-          <strong style={{ color: 'var(--yellow)' }}>{formatNumber(summary.assigned)}</strong>
+          <strong className="metric-value" style={{ color: 'var(--yellow)' }}>{formatNumber(summary.assigned)}</strong>
           <small>
             <span>Issued to Personnel</span>
             <b className="metric-badge yellow">{summary.assigned > 0 ? 'Deployed' : '0'}</b>
@@ -356,11 +405,13 @@ export const DashboardPage = () => {
 
         {/* Metric 5: Expended */}
         <article className="metric">
-          <div className="icon icon-red">
-            <AlertTriangle className="w-4 h-4" />
+          <div className="metric-header">
+            <label>Expended (Ammo/Fuel)</label>
+            <div className="icon icon-red" title="Expended Ordnance">
+              <AlertTriangle size={14} />
+            </div>
           </div>
-          <label>Expended (Ammo/Fuel)</label>
-          <strong style={{ color: 'var(--red)' }}>-{formatNumber(summary.expended)}</strong>
+          <strong className="metric-value" style={{ color: 'var(--red)' }}>-{formatNumber(summary.expended)}</strong>
           <small>
             <span>Combat / Range Used</span>
             <b className="metric-badge red">{summary.expended > 0 ? `-${summary.expended}` : '0'}</b>
@@ -369,11 +420,13 @@ export const DashboardPage = () => {
 
         {/* Metric 6: Closing Balance */}
         <article className="metric">
-          <div className="icon icon-green">
-            <Layers className="w-4 h-4" />
+          <div className="metric-header">
+            <label>Total Closing Balance</label>
+            <div className="icon icon-green" title="Total Closing Balance">
+              <Layers size={14} />
+            </div>
           </div>
-          <label>Total Closing Balance</label>
-          <strong>{formatNumber(summary.closingBalance)}</strong>
+          <strong className="metric-value">{formatNumber(summary.closingBalance)}</strong>
           <small>
             <span>Current Base Inventory</span>
             <b className="metric-badge green">{summary.closingBalance > 0 ? 'Verified' : '0'}</b>
@@ -395,7 +448,7 @@ export const DashboardPage = () => {
           <div className="chart">
             {recentMovements.length > 0 ? (
               <svg viewBox="0 0 700 250" preserveAspectRatio="none">
-                <g stroke="#1a3547" strokeDasharray="3 4">
+                <g stroke="#cbd5e1" strokeDasharray="3 4">
                   <line x1="0" y1="25" x2="700" y2="25" />
                   <line x1="0" y1="88" x2="700" y2="88" />
                   <line x1="0" y1="151" x2="700" y2="151" />
@@ -404,19 +457,19 @@ export const DashboardPage = () => {
                 <polyline
                   points="0,214 110,214 220,214 330,214 440,214 550,214 700,120"
                   fill="none"
-                  stroke="#18d69d"
+                  stroke="#10b981"
                   strokeWidth="3"
                 />
                 <polyline
                   points="0,214 110,214 220,214 330,214 440,214 550,214 700,150"
                   fill="none"
-                  stroke="#299cff"
+                  stroke="#0ea5e9"
                   strokeWidth="3"
                 />
                 <polyline
                   points="0,214 110,214 220,214 330,214 440,214 550,214 700,190"
                   fill="none"
-                  stroke="#ffc033"
+                  stroke="#f59e0b"
                   strokeWidth="3"
                 />
               </svg>
@@ -436,51 +489,47 @@ export const DashboardPage = () => {
           </div>
         </article>
 
-        {/* Panel 2: Assets by Category */}
+        {/* Panel 2: Assets by Category (Redesigned Executive Representation) */}
         <article className="panel category">
           <div className="panel-head">
             <div className="panel-head-title">
               <Package size={16} className="text-blue" />
               <h2>Assets by Category</h2>
             </div>
-            <span className="panel-subtitle">Live Breakdown</span>
+            <span className="category-total-badge">
+              {formatNumber(totalCategoryItems)} Total Units
+            </span>
           </div>
-          <div className="barchart">
-            <div className="barchart-col">
-              <span className="barchart-val">{formatNumber(categoryCounts.VEHICLE)}</span>
-              <div className="barchart-track">
-                <i className="bar bar1" style={{ height: getBarHeight(categoryCounts.VEHICLE) }}></i>
-              </div>
-              <span className="barchart-label">Vehicles</span>
-            </div>
-            <div className="barchart-col">
-              <span className="barchart-val">{formatNumber(categoryCounts.WEAPON)}</span>
-              <div className="barchart-track">
-                <i className="bar bar2" style={{ height: getBarHeight(categoryCounts.WEAPON) }}></i>
-              </div>
-              <span className="barchart-label">Weapons</span>
-            </div>
-            <div className="barchart-col">
-              <span className="barchart-val">{formatNumber(categoryCounts.AMMUNITION)}</span>
-              <div className="barchart-track">
-                <i className="bar bar3" style={{ height: getBarHeight(categoryCounts.AMMUNITION) }}></i>
-              </div>
-              <span className="barchart-label">Ammunition</span>
-            </div>
-            <div className="barchart-col">
-              <span className="barchart-val">{formatNumber(categoryCounts.COMMUNICATION_EQUIPMENT)}</span>
-              <div className="barchart-track">
-                <i className="bar bar4" style={{ height: getBarHeight(categoryCounts.COMMUNICATION_EQUIPMENT) }}></i>
-              </div>
-              <span className="barchart-label">Comms</span>
-            </div>
-            <div className="barchart-col">
-              <span className="barchart-val">{formatNumber(categoryCounts.OTHER)}</span>
-              <div className="barchart-track">
-                <i className="bar bar5" style={{ height: getBarHeight(categoryCounts.OTHER) }}></i>
-              </div>
-              <span className="barchart-label">Other</span>
-            </div>
+
+          <div className="category-bars-container">
+            {categoriesConfig.map((cat) => {
+              const IconComp = cat.icon;
+              const percentage = totalCategoryItems > 0 ? Math.round((cat.count / totalCategoryItems) * 100) : 0;
+              return (
+                <div key={cat.key} className="category-item-card">
+                  <div className="category-item-head">
+                    <div className="category-item-meta">
+                      <div className="category-icon-box" style={{ color: cat.color }}>
+                        <IconComp size={15} />
+                      </div>
+                      <span className="category-item-name">{cat.label}</span>
+                    </div>
+                    <div className="category-item-stats">
+                      <strong className="category-count-number">{formatNumber(cat.count)}</strong>
+                      <span className="category-pct-badge" style={{ color: cat.color }}>{percentage}%</span>
+                    </div>
+                  </div>
+                  <div className="category-progress-track">
+                    <div
+                      className={`category-progress-fill ${cat.barClass}`}
+                      style={{
+                        width: `${Math.min(100, Math.max(cat.count > 0 ? 3 : 0, percentage))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </article>
 
@@ -491,7 +540,7 @@ export const DashboardPage = () => {
               <Layers size={16} className="text-yellow" />
               <h2>Recent Activities</h2>
             </div>
-            <NavLink to="/assignments" className="panel-link">View All →</NavLink>
+            <NavLink to="/movements" className="panel-link">View All →</NavLink>
           </div>
           <div className="activities-list">
             {recentMovements.length > 0 ? (
@@ -557,7 +606,7 @@ export const DashboardPage = () => {
           </div>
           <div className="stock-list">
             {baseStocks.length > 0 ? (
-              baseStocks.map((b, index) => (
+              baseStocks.slice(0, 4).map((b, index) => (
                 <div key={b.id || index} className="stock-row">
                   <span className="stock-name" title={b.name}>
                     {b.name}
@@ -587,51 +636,57 @@ export const DashboardPage = () => {
           </div>
         </article>
 
-        {/* Panel 5: Recent Movements Table */}
+        {/* Panel 5: Recent Movements Table (Optimized Proportions, 4 recent items) */}
         <article className="panel recent">
           <div className="panel-head">
             <div className="panel-head-title">
               <ArrowRightLeft size={16} className="text-blue" />
               <h2>Recent Asset Movements</h2>
             </div>
-            <NavLink to="/transfers" className="panel-link">View Transfers →</NavLink>
+            <NavLink to="/movements" className="panel-link">View All →</NavLink>
           </div>
           <div className="table-responsive">
-            <table>
+            <table className="recent-movements-table">
               <thead>
                 <tr>
-                  <th>Date & Time</th>
-                  <th>Asset ID</th>
-                  <th>Asset Name</th>
-                  <th>From / Base</th>
-                  <th>Remarks / Destination</th>
-                  <th>Type</th>
-                  <th>Status</th>
+                  <th style={{ width: '14%' }}>Date & Time</th>
+                  <th style={{ width: '11%' }}>Asset ID</th>
+                  <th style={{ width: '25%' }}>Asset Name</th>
+                  <th style={{ width: '15%' }}>From / Base</th>
+                  <th style={{ width: '16%' }}>Remarks / Destination</th>
+                  <th style={{ width: '11%' }}>Type</th>
+                  <th style={{ width: '8%', textAlign: 'center' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {recentMovements.length > 0 ? (
-                  recentMovements.slice(0, 5).map((mov) => (
+                  recentMovements.slice(0, 4).map((mov) => (
                     <tr key={mov.id}>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
-                          <span style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 500 }}>
                             {mov.timestamp ? new Date(mov.timestamp).toLocaleDateString() : 'Today'}
                           </span>
-                          <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '9.5px', color: 'var(--muted)' }}>
                             {mov.timestamp ? new Date(mov.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
                           </span>
                         </div>
                       </td>
-                      <td style={{ fontFamily: 'monospace', color: 'var(--blue)', whiteSpace: 'nowrap' }}>ASSET-{mov.equipmentTypeId || mov.id}</td>
-                      <td style={{ fontWeight: 500, color: 'var(--text-heading)' }}>
-                        {mov.equipmentName || `Equipment #${mov.equipmentTypeId}`}
+                      <td style={{ fontFamily: 'monospace', color: 'var(--blue)', fontWeight: 600, fontSize: '11px', whiteSpace: 'nowrap' }}>
+                        {mov.equipmentTypeId || mov.id}
                       </td>
-                      <td style={{ color: 'var(--text)' }}>{mov.baseName || 'Central Depot'}</td>
-                      <td className="truncate-cell" title={mov.remarks || mov.reason || 'Verified Movement'} style={{ color: 'var(--muted)' }}>
+                      <td style={{ fontWeight: 600, color: 'var(--text-heading)', fontSize: '11.5px' }}>
+                        <div style={{ wordBreak: 'break-word', lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {mov.equipmentName || `Equipment ${mov.equipmentTypeId}`}
+                        </div>
+                      </td>
+                      <td style={{ color: 'var(--text)', fontSize: '11.5px', whiteSpace: 'nowrap' }}>
+                        {mov.baseName || 'Central Depot'}
+                      </td>
+                      <td className="truncate-cell" title={mov.remarks || mov.reason || 'Verified Movement'} style={{ color: 'var(--muted)', fontSize: '11px' }}>
                         {mov.remarks || mov.reason || 'Verified Movement'}
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span className={`pill ${
                           mov.movementType === 'PURCHASE'
                             ? 'pgreen'
@@ -640,12 +695,12 @@ export const DashboardPage = () => {
                             : mov.movementType === 'TRANSFER_OUT'
                             ? 'pyellow'
                             : 'ppurple'
-                        }`}>
+                        }`} style={{ fontSize: '9.5px', padding: '2px 5px' }}>
                           {mov.movementType}
                         </span>
                       </td>
-                      <td>
-                        <span className="pill pgreen">Verified</span>
+                      <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+                        <span className="pill pgreen" style={{ fontSize: '9.5px', padding: '2px 6px' }}>Verified</span>
                       </td>
                     </tr>
                   ))
@@ -664,88 +719,82 @@ export const DashboardPage = () => {
 
       {/* ==================== [BONUS FEATURE] NET MOVEMENT DETAILED POP-UP MODAL ==================== */}
       {showNetMovementModal && (
-        <div className="modal-backdrop">
-          <div className="modal-container" style={{ maxWidth: '680px' }}>
+        <div className="modal-backdrop" onClick={() => setShowNetMovementModal(false)}>
+          <div className="modal-container" style={{ maxWidth: '720px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-header-icon" style={{ background: 'rgba(24, 214, 157, 0.2)', color: 'var(--green)' }}>
-                <ArrowRightLeft className="w-5 h-5" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="modal-header-icon" style={{ background: 'rgba(24, 214, 157, 0.15)', color: 'var(--green)', width: '38px', height: '38px', borderRadius: '8px', display: 'grid', placeItems: 'center' }}>
+                  <ArrowRightLeft size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--text-heading)' }}>Net Movement Audit Breakdown</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--muted)' }}>Live mathematical audit equation: Purchases + Transfer In - Transfer Out</p>
+                </div>
               </div>
-              <div className="modal-header-text">
-                <h3>Net Movement Audit Breakdown</h3>
-                <p>Mathematical formula verification: Net Movement = Purchases + Transfer In - Transfer Out</p>
-              </div>
-              <button className="modal-close-btn" onClick={() => setShowNetMovementModal(false)}>
-                <X className="w-4 h-4" />
+              <button className="modal-close-btn" onClick={() => setShowNetMovementModal(false)} aria-label="Close modal">
+                <X size={18} />
               </button>
             </div>
 
             <div className="modal-body" style={{ padding: '20px' }}>
-              {/* Formula Banner */}
-              <div
-                style={{
-                  background: 'rgba(0, 0, 0, 0.4)',
-                  padding: '16px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(24, 214, 157, 0.3)',
-                  marginBottom: '16px',
-                  textAlign: 'center',
-                }}
-              >
-                <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
-                  EXACT AUDIT CALCULATION FORMULA
-                </span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-heading)' }}>
-                  <span style={{ color: 'var(--green)' }}>
-                    Net Movement ({summary.netMovement >= 0 ? `+${formatNumber(summary.netMovement)}` : formatNumber(summary.netMovement)})
-                  </span>{' '}
-                  ={' '}
-                  <span style={{ color: 'var(--blue)' }}>Purchases (+{formatNumber(summary.purchases)})</span>{' '}
-                  +{' '}
-                  <span style={{ color: 'var(--yellow)' }}>Transfer In (+{formatNumber(summary.transferIn)})</span>{' '}
-                  -{' '}
-                  <span style={{ color: 'var(--red)' }}>Transfer Out (-{formatNumber(summary.transferOut)})</span>
+              {/* Sleek Modern Formula Card */}
+              <div className="net-movement-card-formula">
+                <div className="formula-chip-header">
+                  <span className="formula-chip-badge">
+                    <span className="live-dot"></span> MATHEMATICAL AUDIT RECONCILIATION
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 500 }}>Real-Time Verification</span>
+                </div>
+                <div className="formula-equation-row">
+                  <div className="formula-token result">
+                    <span style={{ opacity: 0.8, fontSize: '11px' }}>Net Movement</span>
+                    <span>{summary.netMovement >= 0 ? `+${formatNumber(summary.netMovement)}` : formatNumber(summary.netMovement)}</span>
+                  </div>
+                  <span className="formula-op">=</span>
+                  <div className="formula-token purchase">
+                    <span style={{ opacity: 0.8, fontSize: '11px' }}>Purchases</span>
+                    <span>+{formatNumber(summary.purchases)}</span>
+                  </div>
+                  <span className="formula-op">+</span>
+                  <div className="formula-token transfer-in">
+                    <span style={{ opacity: 0.8, fontSize: '11px' }}>Transfer In</span>
+                    <span>+{formatNumber(summary.transferIn)}</span>
+                  </div>
+                  <span className="formula-op">-</span>
+                  <div className="formula-token transfer-out">
+                    <span style={{ opacity: 0.8, fontSize: '11px' }}>Transfer Out</span>
+                    <span>-{formatNumber(summary.transferOut)}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* 3 Metric Mini Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-                <div
-                  style={{
-                    background: 'var(--panel)',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--line)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>📦 Purchases</span>
-                  <strong style={{ fontSize: '1.25rem', color: 'var(--blue)' }}>+{formatNumber(summary.purchases)}</strong>
+              {/* 3 Metric Glass Cards */}
+              <div className="net-movement-kpi-grid">
+                <div className="net-kpi-card blue">
+                  <div className="net-kpi-header">
+                    <span className="net-kpi-label">Purchases</span>
+                    <span style={{ fontSize: '14px' }}>📦</span>
+                  </div>
+                  <strong className="net-kpi-val blue">+{formatNumber(summary.purchases)}</strong>
+                  <span className="net-kpi-sub">Direct Armory Acquisitions</span>
                 </div>
 
-                <div
-                  style={{
-                    background: 'var(--panel)',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--line)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>📥 Transfer In</span>
-                  <strong style={{ fontSize: '1.25rem', color: 'var(--yellow)' }}>+{formatNumber(summary.transferIn)}</strong>
+                <div className="net-kpi-card yellow">
+                  <div className="net-kpi-header">
+                    <span className="net-kpi-label">Transfer In</span>
+                    <span style={{ fontSize: '14px' }}>📥</span>
+                  </div>
+                  <strong className="net-kpi-val yellow">+{formatNumber(summary.transferIn)}</strong>
+                  <span className="net-kpi-sub">Received from other bases</span>
                 </div>
 
-                <div
-                  style={{
-                    background: 'var(--panel)',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--line)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>📤 Transfer Out</span>
-                  <strong style={{ fontSize: '1.25rem', color: 'var(--red)' }}>-{formatNumber(summary.transferOut)}</strong>
+                <div className="net-kpi-card red">
+                  <div className="net-kpi-header">
+                    <span className="net-kpi-label">Transfer Out</span>
+                    <span style={{ fontSize: '14px' }}>📤</span>
+                  </div>
+                  <strong className="net-kpi-val red">-{formatNumber(summary.transferOut)}</strong>
+                  <span className="net-kpi-sub">Dispatched to other bases</span>
                 </div>
               </div>
 
@@ -786,16 +835,16 @@ export const DashboardPage = () => {
                 </button>
               </div>
 
-              {/* Transactions List */}
-              <div style={{ maxHeight: '220px', overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--line)' }}>
-                <table>
+              {/* Transactions List Table */}
+              <div style={{ maxHeight: '240px', overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--line)' }}>
+                <table style={{ margin: 0 }}>
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Asset</th>
-                      <th>Base</th>
-                      <th>Units</th>
+                      <th style={{ width: '22%' }}>Date & Time</th>
+                      <th style={{ width: '18%' }}>Movement Type</th>
+                      <th style={{ width: '28%' }}>Asset</th>
+                      <th style={{ width: '20%' }}>Base</th>
+                      <th style={{ width: '12%', textAlign: 'right' }}>Units</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -804,7 +853,7 @@ export const DashboardPage = () => {
                         <tr key={item.id}>
                           <td>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
-                              <span style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                                 {item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'Today'}
                               </span>
                               <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
@@ -821,23 +870,24 @@ export const DashboardPage = () => {
                                   ? 'pyellow'
                                   : 'pred'
                               }`}
+                              style={{ fontSize: '10px' }}
                             >
                               {item.movementType}
                             </b>
                           </td>
-                          <td>{item.equipmentName}</td>
-                          <td>{item.baseName}</td>
-                          <td>
-                            <strong>
+                          <td style={{ fontSize: '11.5px', fontWeight: 500 }}>{item.equipmentName}</td>
+                          <td style={{ fontSize: '11.5px', color: 'var(--muted)' }}>{item.baseName}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                            <span style={{ color: item.movementType === 'TRANSFER_OUT' ? 'var(--red)' : item.movementType === 'PURCHASE' ? 'var(--blue)' : 'var(--yellow)' }}>
                               {item.movementType === 'TRANSFER_OUT' ? '-' : '+'}
                               {formatNumber(item.quantity)}
-                            </strong>
+                            </span>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--muted)' }}>
                           No transaction records matching this movement flow.
                         </td>
                       </tr>
@@ -847,22 +897,22 @@ export const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="modal-footer" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="modal-footer" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap', padding: '14px 20px', borderTop: '1px solid var(--line)' }}>
               <NavLink
                 to="/purchases"
                 className="btn-secondary"
                 onClick={() => setShowNetMovementModal(false)}
-                style={{ textDecoration: 'none', fontSize: '12px' }}
+                style={{ textDecoration: 'none', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                🛒 Open Purchases
+                <ShoppingBag size={13} /> Open Purchases
               </NavLink>
               <NavLink
                 to="/transfers"
                 className="btn-secondary"
                 onClick={() => setShowNetMovementModal(false)}
-                style={{ textDecoration: 'none', fontSize: '12px' }}
+                style={{ textDecoration: 'none', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                🔄 Open Transfers
+                <ArrowRightLeft size={13} /> Open Transfers
               </NavLink>
               <button type="button" className="btn-modal-cancel" onClick={() => setShowNetMovementModal(false)}>
                 Close

@@ -17,6 +17,7 @@ import {
   User,
   Activity
 } from 'lucide-react';
+import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const AssignmentsPage = () => {
   const location = useLocation();
@@ -156,9 +157,9 @@ export const AssignmentsPage = () => {
       id: tempId,
       timestamp: new Date().toISOString(),
       baseId: Number(formData.baseId),
-      baseName: selectedBaseObj?.name || 'Base #' + formData.baseId,
+      baseName: selectedBaseObj?.name || 'Base ' + formData.baseId,
       equipmentTypeId: Number(formData.equipmentTypeId),
-      equipmentName: selectedEqObj?.name || 'Equipment #' + formData.equipmentTypeId,
+      equipmentName: selectedEqObj?.name || 'Equipment ' + formData.equipmentTypeId,
       equipmentCategory: selectedEqObj?.category || 'EQUIPMENT',
       quantity: Number(formData.quantity),
       movementType,
@@ -275,9 +276,9 @@ export const AssignmentsPage = () => {
 
   const getAddButtonLabel = () => {
     if (showAddForm) return 'Close Form';
-    if (actionTab === 'RETURN') return '↩ Record Armory Return';
-    if (actionTab === 'EXPEND') return '🔥 Record Munitions Expended';
-    return '👤 New Personnel Assignment';
+    if (actionTab === 'RETURN') return 'Record Armory Return';
+    if (actionTab === 'EXPEND') return 'Record Munitions Expended';
+    return 'New Assignment';
   };
 
   return (
@@ -312,10 +313,10 @@ export const AssignmentsPage = () => {
         >
           <div className="subpage-stat-info">
             <span className="subpage-stat-label">Assigned to Troops</span>
-            <span className="subpage-stat-val" style={{ color: '#a78bfa' }}>
+            <span className="subpage-stat-val" style={{ color: 'var(--purple)' }}>
               {totalAssigned.toLocaleString()}
             </span>
-            <span className="subpage-stat-badge purple">👤 Custody</span>
+            <span className="subpage-stat-badge purple">Custody</span>
           </div>
           <div className="subpage-stat-icon-wrapper purple">
             <UserCheck size={15} />
@@ -608,92 +609,66 @@ export const AssignmentsPage = () => {
         </button>
       </div>
 
-      {/* Filter & Search Toolbar */}
-      <div className="filter-toolbar">
-        {/* Search */}
-        <div className="filter-search-wrap">
-          <Search size={14} className="filter-search-icon" />
-          <input
-            type="text"
-            placeholder="Search personnel, service #, notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="filter-search-input"
-          />
-        </div>
-
-        {/* Base Filter */}
-        <div className="filter-item-group">
-          <Building size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-          <select
-            value={selectedBase}
-            onChange={(e) => setSelectedBase(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Base"
-          >
-            <option value="ALL">All Bases ({bases.length})</option>
-            {bases.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Equipment Filter */}
-        <div className="filter-item-group">
-          <Shield size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-          <select
-            value={selectedEquipment}
-            onChange={(e) => setSelectedEquipment(e.target.value)}
-            className="filter-select"
-            aria-label="Filter by Equipment Type"
-          >
-            <option value="ALL">All Equipment ({equipmentTypes.length})</option>
-            {equipmentTypes.map((eq) => (
-              <option key={eq.id} value={eq.id}>
-                {eq.name} ({eq.category})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Date Range */}
-        <div className="filter-date-wrap">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="filter-date-input"
-            title="Start Date"
-          />
-          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="filter-date-input"
-            title="End Date"
-          />
-        </div>
-
-        {/* Reset Filter Button */}
-        {(selectedBase !== 'ALL' || selectedEquipment !== 'ALL' || startDate !== '' || endDate !== '' || searchQuery !== '') && (
-          <button
-            className="filter-reset-btn"
-            onClick={() => {
-              setSelectedBase('ALL');
-              setSelectedEquipment('ALL');
-              setStartDate('');
-              setEndDate('');
-              setSearchQuery('');
-            }}
-            title="Clear all filters"
-          >
-            ✕ Reset
-          </button>
-        )}
-      </div>
+      {/* Unified Filter & Search Toolbar */}
+      <UnifiedFilterToolbar
+        searchPlaceholder="Search personnel, service #, notes..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        filters={[
+          {
+            id: 'base',
+            icon: Building,
+            iconColor: 'var(--blue)',
+            value: selectedBase,
+            onChange: setSelectedBase,
+            ariaLabel: 'Filter by Base',
+            options: [
+              { value: 'ALL', label: `All Bases (${bases.length})` },
+              ...bases.map((b) => ({ value: b.id, label: b.name }))
+            ]
+          },
+          {
+            id: 'equipmentType',
+            icon: Shield,
+            iconColor: 'var(--yellow)',
+            value: selectedEquipment,
+            onChange: setSelectedEquipment,
+            ariaLabel: 'Filter by Equipment Type',
+            options: [
+              { value: 'ALL', label: `All Equipment (${equipmentTypes.length})` },
+              ...equipmentTypes.map((eq) => ({
+                value: eq.id,
+                label: `${eq.name} (${eq.category})`
+              }))
+            ]
+          }
+        ]}
+        dateRange={{
+          startDate,
+          onStartDateChange: setStartDate,
+          endDate,
+          onEndDateChange: setEndDate,
+          startTitle: 'Start Date',
+          endTitle: 'End Date'
+        }}
+        onRefresh={fetchMovements}
+        loading={loading}
+        refreshLabel="Refresh"
+        hasActiveFilters={
+          selectedBase !== 'ALL' ||
+          selectedEquipment !== 'ALL' ||
+          Boolean(startDate) ||
+          Boolean(endDate) ||
+          Boolean(searchQuery)
+        }
+        onReset={() => {
+          setSelectedBase('ALL');
+          setSelectedEquipment('ALL');
+          setStartDate('');
+          setEndDate('');
+          setSearchQuery('');
+        }}
+      />
 
       {/* Table */}
       <div className="view-table-card">
@@ -716,9 +691,9 @@ export const AssignmentsPage = () => {
               filteredList.map((m) => (
                 <tr key={m.id}>
                   <td>
-                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 400 }}>
-                      #{m.id}
-                    </span>
+                    <strong style={{ fontFamily: 'monospace', color: 'var(--blue)', fontWeight: 600 }}>
+                      {m.id}
+                    </strong>
                   </td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>

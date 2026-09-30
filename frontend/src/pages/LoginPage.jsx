@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import bgImage from '../assets/military_base_bg.jpg';
+import bgImage from '../assets/login_daylight_base.jpg';
 
 export const LoginPage = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
