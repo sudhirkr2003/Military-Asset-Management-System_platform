@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import api, { apiCache } from '../services/api';
 import heroDaylight from '../assets/hero_daylight_command.jpg';
+import indianArmyPortalBg from '../assets/indian_army_portal_bg.jpg';
 import {
   Send,
   Package,
@@ -309,14 +310,18 @@ export const DashboardPage = () => {
 
   return (
     <>
-      {/* 1. Hero Section (Clear Unobstructed Daylight Command Banner) */}
+      {/* 1. Hero Section (Dignified Indian Army Defense Command Banner) */}
       <section
-        className="hero hero-light-banner"
+        className="hero hero-light-banner hero-army-banner"
         style={{
-          backgroundImage: `linear-gradient(90deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.82) 45%, rgba(255, 255, 255, 0.35) 100%), url(${heroDaylight})`,
+          backgroundImage: `linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.90) 55%, rgba(255, 255, 255, 0.55) 100%), url(${indianArmyPortalBg})`,
         }}
       >
         <div className="hero-content">
+          <div className="army-hero-insignia-pill">
+            <span className="army-tricolor-strip"></span>
+            <span>INDIAN ARMY DEFENSE LOGISTICS COMMAND • सेवा परमो धर्मः</span>
+          </div>
           <p className="hero-greeting">Good Morning,</p>
           <h1 className="hero-title">
             Chief <span>Commander</span>

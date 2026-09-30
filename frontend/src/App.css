@@ -1,40 +1,44 @@
-/* ==================== ROOT THEME TOKENS (LIGHT THEME) ==================== */
+/* ==================== ROOT THEME TOKENS (INDIAN ARMY DEFENSE COMMAND THEME) ==================== */
 :root {
-  --bg: #f8fafc;
+  --bg: #f4f6f1;
   --bg-elevated: #ffffff;
-  --panel: #ffffff;
-  --panel2: #f1f5f9;
-  --panel-header: #f8fafc;
-  --line: #e2e8f0;
-  --line-light: rgba(0, 0, 0, 0.05);
-  --text: #0f172a;
-  --text-heading: #0f172a;
-  --muted: #64748b;
-  --muted-dark: #334155;
-  --green: #059669;
-  --green-glow: rgba(5, 150, 105, 0.15);
-  --blue: #0284c7;
-  --blue-glow: rgba(2, 132, 199, 0.15);
-  --yellow: #d97706;
-  --red: #dc2626;
-  --purple: #7c3aed;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --table-header-bg: #f8fafc;
-  --table-header-color: #475569;
-  --table-row-hover: rgba(2, 132, 199, 0.03);
-  --table-border: #e2e8f0;
+  --panel: rgba(255, 255, 255, 0.94);
+  --panel2: #edf2ea;
+  --panel-header: #f8faf6;
+  --line: #d6e0d3;
+  --line-light: rgba(26, 67, 41, 0.08);
+  --text: #172b1e;
+  --text-heading: #0b1f13;
+  --muted: #4e6556;
+  --muted-dark: #27382c;
+  --green: #1a6b3c;
+  --green-glow: rgba(26, 107, 60, 0.20);
+  --army-olive: #244b35;
+  --army-gold: #c59b27;
+  --army-saffron: #ff9933;
+  --army-maroon: #8b1e2d;
+  --blue: #0b5c92;
+  --blue-glow: rgba(11, 92, 146, 0.16);
+  --yellow: #b8860b;
+  --red: #b91c1c;
+  --purple: #6d28d9;
+  --card-shadow: 0 2px 8px rgba(17, 36, 25, 0.06), 0 1px 3px rgba(17, 36, 25, 0.04);
+  --card-hover-shadow: 0 8px 24px rgba(17, 36, 25, 0.12);
+  --table-header-bg: #edf3ea;
+  --table-header-color: #1a4329;
+  --table-row-hover: rgba(26, 107, 60, 0.04);
+  --table-border: #d6e0d3;
   --input-bg: #ffffff;
-  --input-border: #cbd5e1;
-  --input-text: #0f172a;
+  --input-border: #c4d3c0;
+  --input-text: #172b1e;
   --sidebar-bg: #ffffff;
-  --sidebar-border: #e2e8f0;
-  --sidebar-link-hover: #f1f5f9;
-  --sidebar-link-color: #475569;
-  --topbar-bg: rgba(255, 255, 255, 0.95);
-  --topbar-border: #e2e8f0;
+  --sidebar-border: #d6e0d3;
+  --sidebar-link-hover: #edf4eb;
+  --sidebar-link-color: #314a3a;
+  --topbar-bg: rgba(255, 255, 255, 0.96);
+  --topbar-border: #d6e0d3;
   --modal-bg: #ffffff;
-  --modal-header-bg: #f8fafc;
+  --modal-header-bg: #f4f8f2;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -668,7 +672,7 @@ html, body {
   to { opacity: 1; }
 }
 
-/* MAIN CONTENT (SCROLLABLE INDEPENDENT VIEWPORT) */
+/* MAIN CONTENT (SCROLLABLE INDEPENDENT VIEWPORT WITH DEFENSE TOPO WATERMARK) */
 .main {
   min-width: 0;
   flex: 1;
@@ -678,26 +682,46 @@ html, body {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: 
+    radial-gradient(at 100% 0%, rgba(197, 155, 39, 0.08) 0px, transparent 40%),
+    radial-gradient(at 0% 100%, rgba(26, 107, 60, 0.09) 0px, transparent 40%),
+    linear-gradient(180deg, rgba(244, 246, 241, 0.94) 0%, rgba(237, 242, 234, 0.96) 100%),
+    url('./assets/tactical_topo_bg.jpg');
+  background-size: cover, cover, cover, cover;
+  background-position: center;
+  background-attachment: fixed;
   position: relative;
 }
 
-/* TOPBAR (FIXED STICKY HEADER THAT NEVER SCROLLS OUT) */
+/* TOPBAR (WITH INDIAN ARMY TIRANGA PATRIOTIC TOP RIBBON & GLASS BLUR) */
 .topbar {
-  height: 52px;
-  min-height: 52px;
+  height: 54px;
+  min-height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 22px;
   background: var(--topbar-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--topbar-border);
   position: sticky;
   top: 0;
   z-index: 40;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(17, 36, 25, 0.04);
+}
+
+.topbar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9933 0%, #ff9933 33.3%, #ffffff 33.3%, #ffffff 66.6%, #138808 66.6%, #138808 100%);
+  z-index: 50;
 }
 
 .status-live-dot {
@@ -1043,9 +1067,40 @@ html, body {
   max-width: 680px;
 }
 
+.hero-army-banner {
+  border-bottom: 2px solid #d6e0d3;
+  box-shadow: 0 4px 16px rgba(17, 36, 25, 0.05);
+}
+
+.army-hero-insignia-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(26, 67, 41, 0.08);
+  border: 1px solid rgba(26, 67, 41, 0.18);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--army-olive);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  backdrop-filter: blur(8px);
+}
+
+.army-tricolor-strip {
+  width: 14px;
+  height: 9px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #ff9933 0%, #ff9933 33.3%, #ffffff 33.3%, #ffffff 66.6%, #138808 66.6%, #138808 100%);
+  display: inline-block;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
 .hero-greeting, .hero p {
   margin: 0;
-  color: #0284c7;
+  color: var(--blue);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1057,7 +1112,7 @@ html, body {
   font-size: 26px;
   font-weight: 800;
   line-height: 1.2;
-  color: #0f172a;
+  color: var(--text-heading);
 }
 
 .hero-title span, .hero h1 span {
@@ -1065,7 +1120,7 @@ html, body {
 }
 
 .hero-desc, .hero small {
-  color: #334155;
+  color: var(--muted-dark);
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1.4;
