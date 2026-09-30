@@ -28,15 +28,18 @@ public class MovementServiceImpl implements MovementService {
     private final InventoryRepository inventoryRepository;
     private final BaseRepository baseRepository;
     private final EquipmentTypeRepository equipmentTypeRepository;
+    private final com.mams.security.SecurityUtils securityUtils;
 
     public MovementServiceImpl(MovementLedgerRepository movementLedgerRepository,
                                InventoryRepository inventoryRepository,
                                BaseRepository baseRepository,
-                               EquipmentTypeRepository equipmentTypeRepository) {
+                               EquipmentTypeRepository equipmentTypeRepository,
+                               com.mams.security.SecurityUtils securityUtils) {
         this.movementLedgerRepository = movementLedgerRepository;
         this.inventoryRepository = inventoryRepository;
         this.baseRepository = baseRepository;
         this.equipmentTypeRepository = equipmentTypeRepository;
+        this.securityUtils = securityUtils;
     }
 
     @Override
@@ -143,6 +146,8 @@ public class MovementServiceImpl implements MovementService {
     @Override
     @Transactional
     public MovementLedgerDto recordAssignment(AssignmentRequest request, String currentUser) {
+        securityUtils.enforceBaseOwnership(request.getBaseId());
+
         Base base = baseRepository.findById(request.getBaseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Base not found with id: " + request.getBaseId()));
 
@@ -186,6 +191,8 @@ public class MovementServiceImpl implements MovementService {
     @Override
     @Transactional
     public MovementLedgerDto recordReturn(ReturnAssignmentRequest request, String currentUser) {
+        securityUtils.enforceBaseOwnership(request.getBaseId());
+
         Base base = baseRepository.findById(request.getBaseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Base not found with id: " + request.getBaseId()));
 
@@ -226,6 +233,8 @@ public class MovementServiceImpl implements MovementService {
     @Override
     @Transactional
     public MovementLedgerDto recordExpenditure(ExpenditureRequest request, String currentUser) {
+        securityUtils.enforceBaseOwnership(request.getBaseId());
+
         Base base = baseRepository.findById(request.getBaseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Base not found with id: " + request.getBaseId()));
 
@@ -269,9 +278,11 @@ public class MovementServiceImpl implements MovementService {
     @Override
     @Transactional(readOnly = true)
     public List<MovementLedgerDto> getMovements(Long baseId, Long equipmentTypeId, LocalDateTime startDate, LocalDateTime endDate) {
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
+
         List<MovementLedger> movements;
-        if (baseId != null) {
-            movements = movementLedgerRepository.findByBaseId(baseId);
+        if (effectiveBaseId != null) {
+            movements = movementLedgerRepository.findByBaseId(effectiveBaseId);
         } else {
             movements = movementLedgerRepository.findAll();
         }
@@ -289,6 +300,11 @@ public class MovementServiceImpl implements MovementService {
     public MovementLedgerDto getMovementById(Long id) {
         MovementLedger ledger = movementLedgerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Movement transaction not found with id: " + id));
+
+        if (ledger.getBase() != null) {
+            securityUtils.validateAndGetEffectiveBaseId(ledger.getBase().getId());
+        }
+
         return mapToDto(ledger);
     }
 

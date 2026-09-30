@@ -56,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         String jwt = jwtUtils.generateToken(
+                userDetails.getId(),
                 userDetails.getUsername(),
                 userDetails.getRole().name(),
                 userDetails.getBaseId()

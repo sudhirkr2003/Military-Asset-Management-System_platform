@@ -1,0 +1,48 @@
+/* ==================== STRICT TYPOGRAPHY DESIGN SYSTEM ==================== 
+  - Headers (Headings, titles, main banners): font-weight 700
+  - Subheaders (Subtitles, section headers, table headers th): font-weight 500
+  - Body & Controls (Body text, paragraphs, labels, buttons, inputs, tables td): font-weight 400
+  - NO OTHER FONT WEIGHT VALUES ARE ALLOWED (300, 600, 800, 900 replaced)
+============================================================================= */
+
+:root {
+  --fw-header: 700;
+  --fw-subheader: 500;
+  --fw-body: 400;
+}
+
+/* Headings & Main Titles (700) */
+h1, h2, h3, h4, h5, h6,
+.fw-header,
+.military-title-main,
+.military-title-sub,
+.page-title,
+.modal-title,
+.hero-content h1,
+.panel-head h2,
+.nav-logo-text {
+  font-weight: var(--fw-header) !important;
+}
+
+/* Subheadings & Section Subtitles & Table Column Headers (500) */
+.fw-subheader,
+.panel-subtitle,
+.page-subtitle,
+.topbar-subtitle,
+.modal-header-text p,
+.form-section-title,
+.military-tagline,
+th {
+  font-weight: var(--fw-subheader) !important;
+}
+
+/* Body Text, Labels, Buttons, Paragraphs, Form Inputs, Spans & Badges (400) */
+body, p, label, button, input, select, textarea, td, span, small, code, b, strong,
+.fw-body,
+.military-label,
+.military-login-btn,
+.btn-primary, .btn-secondary, .btn-danger, .modal-submit-btn,
+.nav-link, .topbar-status-text, .pill, .metric-badge, .metric label, .metric strong,
+.barchart-val, .barchart-label, .stock-name, .stock-fraction, .stock-pct {
+  font-weight: var(--fw-body);
+}

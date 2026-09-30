@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import { RefreshCw } from 'lucide-react';
 
@@ -7,7 +7,7 @@ export const MovementsPage = () => {
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState('ALL');
 
-  const fetchMovements = async () => {
+  const fetchMovements = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/movements');
@@ -19,7 +19,7 @@ export const MovementsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchMovements();
@@ -27,17 +27,22 @@ export const MovementsPage = () => {
     const handleUpdate = () => fetchMovements();
     window.addEventListener('mams:movement_updated', handleUpdate);
     return () => window.removeEventListener('mams:movement_updated', handleUpdate);
+  }, [fetchMovements]);
+
+  const formatNumber = useCallback((val) => {
+    return Number(val || 0).toLocaleString('en-US');
   }, []);
 
-  const formatNumber = (val) => {
-    return Number(val || 0).toLocaleString('en-US');
-  };
-
-  const types = ['ALL', 'PURCHASE', 'TRANSFER_OUT', 'TRANSFER_IN', 'ASSIGNMENT', 'RETURN', 'EXPENDITURE'];
-
-  const filteredMovements = movements.filter((m) =>
-    selectedType === 'ALL' || m.movementType === selectedType
+  const types = useMemo(
+    () => ['ALL', 'PURCHASE', 'TRANSFER_OUT', 'TRANSFER_IN', 'ASSIGNMENT', 'RETURN', 'EXPENDITURE'],
+    []
   );
+
+  const filteredMovements = useMemo(() => {
+    return movements.filter((m) =>
+      selectedType === 'ALL' || m.movementType === selectedType
+    );
+  }, [movements, selectedType]);
 
   return (
     <section className="view-panel-container">
@@ -50,8 +55,8 @@ export const MovementsPage = () => {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Movement Type"
           >
             {types.map((t) => (
               <option key={t} value={t}>
@@ -59,8 +64,8 @@ export const MovementsPage = () => {
               </option>
             ))}
           </select>
-          <button className="btn-secondary" onClick={fetchMovements} disabled={loading}>
-            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchMovements} disabled={loading} title="Refresh Movements">
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
       </div>
@@ -85,7 +90,16 @@ export const MovementsPage = () => {
               filteredMovements.map((m) => (
                 <tr key={m.id}>
                   <td>#{m.id}</td>
-                  <td>{m.timestamp ? new Date(m.timestamp).toLocaleString() : 'N/A'}</td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        {m.timestamp ? new Date(m.timestamp).toLocaleDateString() : 'Today'}
+                      </span>
+                      <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                        {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
+                      </span>
+                    </div>
+                  </td>
                   <td><strong>{m.baseName}</strong></td>
                   <td>{m.equipmentName}</td>
                   <td>{m.equipmentCategory || 'EQUIPMENT'}</td>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import { RefreshCw } from 'lucide-react';
 
@@ -8,7 +8,7 @@ export const InventoryPage = () => {
   const [selectedBase, setSelectedBase] = useState('ALL');
   const [bases, setBases] = useState([]);
 
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     setLoading(true);
     try {
       const [invRes, basesRes] = await Promise.all([
@@ -27,7 +27,7 @@ export const InventoryPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchInventory();
@@ -35,15 +35,17 @@ export const InventoryPage = () => {
     const handleUpdate = () => fetchInventory();
     window.addEventListener('mams:movement_updated', handleUpdate);
     return () => window.removeEventListener('mams:movement_updated', handleUpdate);
+  }, [fetchInventory]);
+
+  const formatNumber = useCallback((val) => {
+    return Number(val || 0).toLocaleString('en-US');
   }, []);
 
-  const formatNumber = (val) => {
-    return Number(val || 0).toLocaleString('en-US');
-  };
-
-  const filteredInventory = liveInventory.filter((inv) =>
-    selectedBase === 'ALL' || String(inv.baseId) === String(selectedBase)
-  );
+  const filteredInventory = useMemo(() => {
+    return liveInventory.filter((inv) =>
+      selectedBase === 'ALL' || String(inv.baseId) === String(selectedBase)
+    );
+  }, [liveInventory, selectedBase]);
 
   return (
     <section className="view-panel-container">
@@ -56,18 +58,18 @@ export const InventoryPage = () => {
           <select
             value={selectedBase}
             onChange={(e) => setSelectedBase(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Base"
           >
-            <option value="ALL">All Bases & Depots</option>
+            <option value="ALL">All Bases ({bases.length})</option>
             {bases.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}
           </select>
-          <button className="btn-secondary" onClick={fetchInventory} disabled={loading}>
-            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchInventory} disabled={loading} title="Refresh Inventory">
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
       </div>
@@ -94,10 +96,10 @@ export const InventoryPage = () => {
                   <td>{inv.equipmentName}</td>
                   <td>{inv.equipmentCategory || 'EQUIPMENT'}</td>
                   <td>{formatNumber(inv.openingBalance)}</td>
-                  <td style={{ color: 'var(--green)', fontWeight: 700 }}>
+                  <td style={{ color: 'var(--green)', fontWeight: 400 }}>
                     {formatNumber(inv.availableQuantity)}
                   </td>
-                  <td style={{ color: 'var(--yellow)', fontWeight: 700 }}>
+                  <td style={{ color: 'var(--yellow)', fontWeight: 400 }}>
                     {formatNumber(inv.assignedQuantity)}
                   </td>
                   <td style={{ color: 'var(--red)' }}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
@@ -36,7 +36,7 @@ export const BasesPage = () => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  const fetchBasesData = async () => {
+  const fetchBasesData = useCallback(async () => {
     setLoading(true);
     try {
       const [basesRes, invRes] = await Promise.all([
@@ -55,11 +55,11 @@ export const BasesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBasesData();
-  }, []);
+  }, [fetchBasesData]);
 
   const handleOpenAdd = () => {
     setFormData({
@@ -108,19 +108,21 @@ export const BasesPage = () => {
     }
   };
 
-  const formatNumber = (val) => {
+  const formatNumber = useCallback((val) => {
     return Number(val || 0).toLocaleString('en-US');
-  };
+  }, []);
 
-  const filteredBases = bases.filter((b) => {
-    return (
-      searchTerm === '' ||
-      b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.commanderName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const filteredBases = useMemo(() => {
+    return bases.filter((b) => {
+      return (
+        searchTerm === '' ||
+        b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        b.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        b.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        b.commanderName?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [bases, searchTerm]);
 
   return (
     <section className="view-panel-container">
@@ -133,60 +135,43 @@ export const BasesPage = () => {
           </small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchBasesData} disabled={loading}>
-            <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchBasesData} disabled={loading} title="Refresh Installations">
+            <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
           {isAdmin && (
-            <button className="btn-primary" onClick={handleOpenAdd}>
-              <Plus className="w-3.5 h-3.5 inline mr-1" /> + Register Installation
+            <button className="btn-primary" onClick={handleOpenAdd} title="Register Installation">
+              <Plus className="w-3.5 h-3.5 inline mr-1" /> <span className="btn-text">Register Installation</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1.25rem',
-          background: 'var(--panel)',
-          padding: '12px 16px',
-          borderRadius: '10px',
-          border: '1px solid var(--line)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '240px' }}>
-          <Search className="w-4 h-4 text-muted" style={{ color: 'var(--muted)' }} />
+      {/* Filter & Search Toolbar */}
+      <div className="filter-toolbar">
+        <div className="filter-search-wrap">
+          <Search size={14} className="filter-search-icon" />
           <input
             type="text"
             placeholder="Search bases by name, code (e.g. ALP01), sector location, commander..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#ffffff',
-              fontSize: '12px',
-              outline: 'none',
-              width: '100%',
-            }}
+            className="filter-search-input"
           />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
-        <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
+
+        <span style={{ fontSize: '11.5px', color: 'var(--muted)', marginLeft: 'auto', fontWeight: 500 }}>
           {filteredBases.length} Active Installations
         </span>
+
+        {searchTerm && (
+          <button
+            className="filter-reset-btn"
+            onClick={() => setSearchTerm('')}
+            title="Clear search"
+          >
+            ✕ Reset
+          </button>
+        )}
       </div>
 
       {/* Bases Grid */}
@@ -214,11 +199,11 @@ export const BasesPage = () => {
                   </span>
                 </div>
 
-                <h3 style={{ fontSize: '1.15rem', color: '#fff', marginBottom: '6px' }}>{b.name}</h3>
+                <h3 style={{ fontSize: '1.15rem', color: 'var(--text-heading)', marginBottom: '6px' }}>{b.name}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px', color: 'var(--muted)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Shield className="w-3.5 h-3.5 text-blue" style={{ color: 'var(--blue)' }} />
-                    <span>Tactical Code: <strong style={{ color: '#fff', fontFamily: 'monospace' }}>{b.code}</strong></span>
+                    <span>Tactical Code: <strong style={{ color: 'var(--text-heading)', fontFamily: 'monospace' }}>{b.code}</strong></span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <MapPin className="w-3.5 h-3.5 text-yellow" style={{ color: 'var(--yellow)' }} />
@@ -231,10 +216,10 @@ export const BasesPage = () => {
                 </div>
 
                 {/* Armory Progress Bar */}
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--line)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
                     <span style={{ color: 'var(--muted)' }}>Armory In-Stock</span>
-                    <strong style={{ color: '#fff' }}>{formatNumber(totalStock)} / {formatNumber(maxCap)} ({pct}%)</strong>
+                    <strong style={{ color: 'var(--text-heading)' }}>{formatNumber(totalStock)} / {formatNumber(maxCap)} ({pct}%)</strong>
                   </div>
                   <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
                     <div

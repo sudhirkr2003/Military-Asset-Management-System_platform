@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import {
   ArrowRightLeft,
@@ -43,7 +43,7 @@ export const TransfersPage = () => {
     remarks: ''
   });
 
-  const fetchLookups = async () => {
+  const fetchLookups = useCallback(async () => {
     try {
       const [basesRes, equipRes] = await Promise.all([
         api.get('/bases').catch(() => ({ data: { data: [] } })),
@@ -54,14 +54,13 @@ export const TransfersPage = () => {
     } catch (err) {
       console.error('Error fetching lookups', err);
     }
-  };
+  }, []);
 
-  const fetchTransfers = async () => {
+  const fetchTransfers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/movements');
       if (res.data?.data) {
-        // Filter transfers (TRANSFER_OUT or TRANSFER_IN)
         const transferList = res.data.data.filter((m) =>
           m.movementType === 'TRANSFER_OUT' || m.movementType === 'TRANSFER_IN'
         );
@@ -72,7 +71,7 @@ export const TransfersPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLookups();
@@ -81,12 +80,12 @@ export const TransfersPage = () => {
     const handleUpdate = () => fetchTransfers();
     window.addEventListener('mams:movement_updated', handleUpdate);
     return () => window.removeEventListener('mams:movement_updated', handleUpdate);
-  }, []);
+  }, [fetchLookups, fetchTransfers]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
   const handleInitiateTransfer = async (e) => {
     e.preventDefault();
@@ -95,82 +94,116 @@ export const TransfersPage = () => {
       return;
     }
 
-    setFormLoading(true);
     setNotification({ type: '', message: '' });
 
+    const fromBaseObj = bases.find((b) => Number(b.id) === Number(formData.fromBaseId));
+    const toBaseObj = bases.find((b) => Number(b.id) === Number(formData.toBaseId));
+    const eqObj = equipmentTypes.find((eq) => Number(eq.id) === Number(formData.equipmentTypeId));
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTransfer = {
+      id: tempId,
+      timestamp: new Date().toISOString(),
+      baseId: Number(formData.fromBaseId),
+      baseName: `${fromBaseObj?.name || 'Base'} ➔ ${toBaseObj?.name || 'Base'}`,
+      equipmentTypeId: Number(formData.equipmentTypeId),
+      equipmentName: eqObj?.name || 'Equipment #' + formData.equipmentTypeId,
+      equipmentCategory: eqObj?.category || 'EQUIPMENT',
+      quantity: Number(formData.quantity),
+      movementType: 'TRANSFER_OUT',
+      remarks: formData.remarks || 'Inter-base asset transit dispatched',
+      isOptimistic: true
+    };
+
+    // 1. Optimistically append transfer to list immediately
+    setTransfers((prev) => [optimisticTransfer, ...prev]);
+
+    // 2. Immediately notify user and clear form
+    setNotification({
+      type: 'success',
+      message: 'Transfer dispatched! Dispatching inventory movement...'
+    });
+
+    const payload = {
+      fromBaseId: Number(formData.fromBaseId),
+      toBaseId: Number(formData.toBaseId),
+      equipmentTypeId: Number(formData.equipmentTypeId),
+      quantity: Number(formData.quantity),
+      reason: formData.reason || 'Tactical Reallocation / Operational Requirement',
+      remarks: formData.remarks || 'Inter-base asset transit dispatched'
+    };
+
+    setFormData({
+      fromBaseId: '',
+      toBaseId: '',
+      equipmentTypeId: '',
+      quantity: 1,
+      reason: '',
+      remarks: ''
+    });
+
+    setTimeout(() => {
+      setShowAddForm(false);
+      setNotification({ type: '', message: '' });
+    }, 1200);
+
+    // 3. Dispatch background API call
     try {
-      const payload = {
-        fromBaseId: Number(formData.fromBaseId),
-        toBaseId: Number(formData.toBaseId),
-        equipmentTypeId: Number(formData.equipmentTypeId),
-        quantity: Number(formData.quantity),
-        reason: formData.reason || 'Tactical Reallocation / Operational Requirement',
-        remarks: formData.remarks || 'Inter-base asset transit dispatched'
-      };
-
       const res = await api.post('/movements/transfer', payload);
-      setNotification({
-        type: 'success',
-        message: res.data?.message || 'Inter-base transfer completed successfully!'
-      });
-
-      setFormData({
-        fromBaseId: '',
-        toBaseId: '',
-        equipmentTypeId: '',
-        quantity: 1,
-        reason: '',
-        remarks: ''
-      });
-
-      fetchTransfers();
       window.dispatchEvent(new Event('mams:movement_updated'));
-
-      setTimeout(() => {
-        setShowAddForm(false);
-        setNotification({ type: '', message: '' });
-      }, 1600);
+      if (res.data?.data) {
+        setTransfers((prev) =>
+          prev.map((item) => (item.id === tempId ? { ...res.data.data, baseName: optimisticTransfer.baseName, equipmentName: eqObj?.name } : item))
+        );
+      } else {
+        fetchTransfers();
+      }
     } catch (err) {
+      // Rollback on failure
+      setTransfers((prev) => prev.filter((item) => item.id !== tempId));
       const errorMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        'Failed to process transfer. Ensure source base has adequate opening balance.';
+        'Failed to process transfer. Rollback executed.';
       setNotification({ type: 'error', message: errorMsg });
-    } finally {
-      setFormLoading(false);
+      setShowAddForm(true);
     }
   };
 
   // Filter transfers
-  const filteredTransfers = transfers.filter((item) => {
-    if (selectedOrigin !== 'ALL' && String(item.baseId) !== String(selectedOrigin)) {
-      return false;
-    }
-    if (selectedEquipment !== 'ALL' && String(item.equipmentTypeId) !== String(selectedEquipment)) {
-      return false;
-    }
-    if (startDate) {
-      const itemDate = new Date(item.timestamp);
-      if (itemDate < new Date(startDate)) return false;
-    }
-    if (endDate) {
-      const itemDate = new Date(item.timestamp);
-      const endDateTime = new Date(endDate);
-      endDateTime.setHours(23, 59, 59, 999);
-      if (itemDate > endDateTime) return false;
-    }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchName = item.equipmentName?.toLowerCase().includes(q);
-      const matchBase = item.baseName?.toLowerCase().includes(q);
-      const matchRemarks = item.remarks?.toLowerCase().includes(q);
-      const matchRef = item.referenceId?.toLowerCase().includes(q);
-      if (!matchName && !matchBase && !matchRemarks && !matchRef) return false;
-    }
-    return true;
-  });
+  const filteredTransfers = useMemo(() => {
+    return transfers.filter((item) => {
+      if (selectedOrigin !== 'ALL' && String(item.baseId) !== String(selectedOrigin)) {
+        return false;
+      }
+      if (selectedEquipment !== 'ALL' && String(item.equipmentTypeId) !== String(selectedEquipment)) {
+        return false;
+      }
+      if (startDate) {
+        const itemDate = new Date(item.timestamp);
+        if (itemDate < new Date(startDate)) return false;
+      }
+      if (endDate) {
+        const itemDate = new Date(item.timestamp);
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        if (itemDate > endDateTime) return false;
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchName = item.equipmentName?.toLowerCase().includes(q);
+        const matchBase = item.baseName?.toLowerCase().includes(q);
+        const matchRemarks = item.remarks?.toLowerCase().includes(q);
+        const matchRef = item.referenceId?.toLowerCase().includes(q);
+        if (!matchName && !matchBase && !matchRemarks && !matchRef) return false;
+      }
+      return true;
+    });
+  }, [transfers, selectedOrigin, selectedEquipment, startDate, endDate, searchQuery]);
 
-  const totalTransferredUnits = filteredTransfers.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
+  const totalTransferredUnits = useMemo(() => {
+    return filteredTransfers.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
+  }, [filteredTransfers]);
 
   return (
     <div className="view-panel-container">
@@ -184,12 +217,12 @@ export const TransfersPage = () => {
           <button
             className="action-trigger-btn"
             onClick={() => setShowAddForm(!showAddForm)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            title={showAddForm ? 'Close Form' : 'Initiate New Transfer'}
           >
-            <Plus size={15} /> {showAddForm ? 'Close Form' : 'Initiate New Transfer'}
+            <Plus size={15} /> <span className="btn-text">{showAddForm ? 'Close Form' : 'Initiate New Transfer'}</span>
           </button>
-          <button className="btn-secondary" onClick={fetchTransfers} disabled={loading}>
-            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchTransfers} disabled={loading} title="Refresh Transfers">
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
       </div>
@@ -200,10 +233,10 @@ export const TransfersPage = () => {
           <div className="subpage-stat-info">
             <span className="subpage-stat-label">Total Transfers</span>
             <span className="subpage-stat-val">{filteredTransfers.length}</span>
-            <span className="subpage-stat-badge blue">▲ Logged Transfers</span>
+            <span className="subpage-stat-badge blue">▲ Transfers</span>
           </div>
           <div className="subpage-stat-icon-wrapper blue">
-            <ArrowRightLeft size={20} />
+            <ArrowRightLeft size={15} />
           </div>
         </div>
 
@@ -213,10 +246,10 @@ export const TransfersPage = () => {
             <span className="subpage-stat-val" style={{ color: '#60a5fa' }}>
               {totalTransferredUnits.toLocaleString()}
             </span>
-            <span className="subpage-stat-badge blue">↔ Reallocated Stock</span>
+            <span className="subpage-stat-badge blue">↔ Relocated</span>
           </div>
           <div className="subpage-stat-icon-wrapper green">
-            <TrendingUp size={20} />
+            <TrendingUp size={15} />
           </div>
         </div>
 
@@ -229,29 +262,29 @@ export const TransfersPage = () => {
             <span className="subpage-stat-badge yellow">◈ Network Grid</span>
           </div>
           <div className="subpage-stat-icon-wrapper yellow">
-            <Building size={20} />
+            <Building size={15} />
           </div>
         </div>
 
         <div className="subpage-stat-card">
           <div className="subpage-stat-info">
-            <span className="subpage-stat-label">Ledger Reconciliation</span>
-            <span className="subpage-stat-val" style={{ color: '#34d399', fontSize: '18px' }}>
+            <span className="subpage-stat-label">Reconciliation</span>
+            <span className="subpage-stat-val" style={{ color: '#34d399', fontSize: '15px' }}>
               100% Balanced
             </span>
-            <span className="subpage-stat-badge green">✓ Zero Leakage</span>
+            <span className="subpage-stat-badge green">✓ Zero Leak</span>
           </div>
           <div className="subpage-stat-icon-wrapper purple">
-            <Shield size={20} />
+            <Shield size={15} />
           </div>
         </div>
       </div>
 
       {/* Collapsible Initiate Transfer Form */}
       {showAddForm && (
-        <div className="view-table-card" style={{ marginBottom: '24px', border: '1px solid rgba(96, 165, 250, 0.3)', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85))' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="view-table-card" style={{ marginBottom: '24px', border: '1px solid var(--line)', background: 'var(--panel)', padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <ArrowRightLeft size={18} /> Initiate Inter-Base Asset Transfer
             </h3>
             <button
@@ -391,20 +424,28 @@ export const TransfersPage = () => {
         </div>
       )}
 
-      {/* Filter Bar */}
-      <div className="card" style={{ padding: '14px 18px', marginBottom: '18px', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#93c5fd', fontWeight: 600, fontSize: '13px' }}>
-          <Filter size={15} /> Filter Movements:
+      {/* Filter & Search Toolbar */}
+      <div className="filter-toolbar">
+        {/* Search */}
+        <div className="filter-search-wrap">
+          <Search size={14} className="filter-search-icon" />
+          <input
+            type="text"
+            placeholder="Search transfer notes, assets, reasons..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="filter-search-input"
+          />
         </div>
 
         {/* Base Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Building size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-item-group">
+          <Building size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           <select
             value={selectedOrigin}
             onChange={(e) => setSelectedOrigin(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Origin Base"
           >
             <option value="ALL">All Bases ({bases.length})</option>
             {bases.map((b) => (
@@ -416,13 +457,13 @@ export const TransfersPage = () => {
         </div>
 
         {/* Equipment Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Shield size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-item-group">
+          <Shield size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           <select
             value={selectedEquipment}
             onChange={(e) => setSelectedEquipment(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Equipment Type"
           >
             <option value="ALL">All Equipment ({equipmentTypes.length})</option>
             {equipmentTypes.map((eq) => (
@@ -434,54 +475,40 @@ export const TransfersPage = () => {
         </div>
 
         {/* Date Range */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Calendar size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-date-wrap">
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="modal-input"
-            style={{ width: 'auto', padding: '5px 10px', fontSize: '12px' }}
+            className="filter-date-input"
             title="From Date"
           />
-          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>to</span>
+          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>to</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="modal-input"
-            style={{ width: 'auto', padding: '5px 10px', fontSize: '12px' }}
+            className="filter-date-input"
             title="To Date"
           />
         </div>
 
-        {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
-          <Search size={14} style={{ color: 'var(--muted)' }} />
-          <input
-            type="text"
-            placeholder="Search transfer notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="modal-input"
-            style={{ width: '180px', padding: '5px 10px', fontSize: '12px' }}
-          />
-          {(selectedOrigin !== 'ALL' || selectedEquipment !== 'ALL' || startDate || endDate || searchQuery) && (
-            <button
-              className="btn-secondary"
-              onClick={() => {
-                setSelectedOrigin('ALL');
-                setSelectedEquipment('ALL');
-                setStartDate('');
-                setEndDate('');
-                setSearchQuery('');
-              }}
-              style={{ padding: '4px 8px', fontSize: '11px' }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+        {/* Reset Filter Button */}
+        {(selectedOrigin !== 'ALL' || selectedEquipment !== 'ALL' || startDate !== '' || endDate !== '' || searchQuery !== '') && (
+          <button
+            className="filter-reset-btn"
+            onClick={() => {
+              setSelectedOrigin('ALL');
+              setSelectedEquipment('ALL');
+              setStartDate('');
+              setEndDate('');
+              setSearchQuery('');
+            }}
+            title="Clear all filters"
+          >
+            ✕ Reset
+          </button>
+        )}
       </div>
 
       {/* Transfer History Table */}
@@ -505,14 +532,19 @@ export const TransfersPage = () => {
               filteredTransfers.map((t) => (
                 <tr key={t.id}>
                   <td>
-                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 600 }}>
+                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 400 }}>
                       #TRF-{t.id}
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
-                      {t.timestamp ? new Date(t.timestamp).toLocaleString() : 'N/A'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        {t.timestamp ? new Date(t.timestamp).toLocaleDateString() : 'Today'}
+                      </span>
+                      <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                        {t.timestamp ? new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
+                      </span>
+                    </div>
                   </td>
                   <td>
                     <strong>{t.baseName}</strong>
@@ -529,7 +561,7 @@ export const TransfersPage = () => {
                     )}
                   </td>
                   <td>
-                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                    <span style={{ fontWeight: 400, color: 'var(--text)' }}>
                       {t.equipmentName}
                     </span>
                   </td>
@@ -537,7 +569,7 @@ export const TransfersPage = () => {
                     <b className="pill pblue">{t.equipmentCategory || 'EQUIPMENT'}</b>
                   </td>
                   <td>
-                    <span style={{ fontWeight: 700, fontSize: '12.5px', color: t.movementType === 'TRANSFER_OUT' ? '#f87171' : '#4ade80' }}>
+                    <span style={{ fontWeight: 400, fontSize: '12.5px', color: t.movementType === 'TRANSFER_OUT' ? '#f87171' : '#4ade80' }}>
                       {t.movementType === 'TRANSFER_OUT' ? '-' : '+'}{Number(t.quantity).toLocaleString()}
                     </span>
                   </td>

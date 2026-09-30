@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/dashboard")
 @Tag(name = "Dashboard", description = "Endpoints for military asset dashboard summary, KPI metrics, charts, and activity")
 @SecurityRequirement(name = "BearerAuth")
+@PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER', 'LOGISTICS_OFFICER')")
 public class DashboardController {
 
     private final DashboardService dashboardService;

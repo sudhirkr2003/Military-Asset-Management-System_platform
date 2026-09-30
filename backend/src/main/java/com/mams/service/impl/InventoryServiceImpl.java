@@ -15,14 +15,23 @@ import java.util.stream.Collectors;
 public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
+    private final com.mams.security.SecurityUtils securityUtils;
 
-    public InventoryServiceImpl(InventoryRepository inventoryRepository) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository,
+                                com.mams.security.SecurityUtils securityUtils) {
         this.inventoryRepository = inventoryRepository;
+        this.securityUtils = securityUtils;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<InventoryDto> getAllInventory() {
+        if (securityUtils.isCurrentUserBaseCommander()) {
+            Long userBaseId = securityUtils.getCurrentUserBaseId();
+            if (userBaseId != null) {
+                return getInventoryByBase(userBaseId);
+            }
+        }
         return inventoryRepository.findAll().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -31,7 +40,8 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional(readOnly = true)
     public List<InventoryDto> getInventoryByBase(Long baseId) {
-        return inventoryRepository.findByBaseId(baseId).stream()
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
+        return inventoryRepository.findByBaseId(effectiveBaseId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -39,8 +49,9 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional(readOnly = true)
     public InventoryDto getInventoryByBaseAndEquipment(Long baseId, Long equipmentTypeId) {
-        Inventory inventory = inventoryRepository.findByBaseIdAndEquipmentTypeId(baseId, equipmentTypeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for base " + baseId + " and equipment " + equipmentTypeId));
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
+        Inventory inventory = inventoryRepository.findByBaseIdAndEquipmentTypeId(effectiveBaseId, equipmentTypeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for base " + effectiveBaseId + " and equipment " + equipmentTypeId));
         return mapToDto(inventory);
     }
 

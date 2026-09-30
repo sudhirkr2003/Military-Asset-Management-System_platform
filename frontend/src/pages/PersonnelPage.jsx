@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { NavLink } from 'react-router-dom';
 import api from '../services/api';
@@ -74,7 +74,7 @@ export const PersonnelPage = () => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  const fetchPersonnelAndBases = async () => {
+  const fetchPersonnelAndBases = useCallback(async () => {
     setLoading(true);
     try {
       const [personnelRes, basesRes] = await Promise.all([
@@ -93,11 +93,11 @@ export const PersonnelPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPersonnelAndBases();
-  }, []);
+  }, [fetchPersonnelAndBases]);
 
   const handleOpenAdd = () => {
     setFormData({
@@ -222,18 +222,20 @@ export const PersonnelPage = () => {
   };
 
   // Filtered list
-  const filteredPersonnel = personnelList.filter((p) => {
-    const matchesBase = selectedBase === 'ALL' || (p.baseId && String(p.baseId) === String(selectedBase));
-    const matchesRole = selectedRole === 'ALL' || p.role === selectedRole;
-    const matchesStatus = selectedStatus === 'ALL' || p.status === selectedStatus;
-    const matchesSearch =
-      searchTerm === '' ||
-      p.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.baseName?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesBase && matchesRole && matchesStatus && matchesSearch;
-  });
+  const filteredPersonnel = useMemo(() => {
+    return personnelList.filter((p) => {
+      const matchesBase = selectedBase === 'ALL' || (p.baseId && String(p.baseId) === String(selectedBase));
+      const matchesRole = selectedRole === 'ALL' || p.role === selectedRole;
+      const matchesStatus = selectedStatus === 'ALL' || p.status === selectedStatus;
+      const matchesSearch =
+        searchTerm === '' ||
+        p.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.baseName?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesBase && matchesRole && matchesStatus && matchesSearch;
+    });
+  }, [personnelList, selectedBase, selectedRole, selectedStatus, searchTerm]);
 
   const getRoleBadgeClass = (role) => {
     switch (role) {
@@ -259,234 +261,138 @@ export const PersonnelPage = () => {
           </small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchPersonnelAndBases} disabled={loading}>
-            <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchPersonnelAndBases} disabled={loading} title="Refresh Personnel Roster">
+            <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
-          <button className="btn-primary" onClick={handleOpenAdd}>
-            <UserPlus className="w-3.5 h-3.5 inline mr-1" /> + Register Personnel
+          <button className="btn-primary" onClick={handleOpenAdd} title="Register Personnel">
+            <UserPlus className="w-3.5 h-3.5 inline mr-1" /> <span className="btn-text">Register Personnel</span>
           </button>
         </div>
       </div>
 
       {/* Summary KPI Mini-Cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '12px',
-          marginBottom: '1rem',
-        }}
-      >
-        <div
-          style={{
-            background: 'var(--panel)',
-            padding: '12px 16px',
-            borderRadius: '10px',
-            border: '1px solid var(--line)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              background: 'rgba(36, 153, 255, 0.15)',
-              color: 'var(--blue)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Users className="w-4 h-4" />
+      <div className="subpage-stats-grid">
+        <div className="subpage-stat-card">
+          <div className="subpage-stat-info">
+            <span className="subpage-stat-label">Total Roster</span>
+            <span className="subpage-stat-val">{personnelList.length}</span>
+            <span className="subpage-stat-badge blue">◈ Registered</span>
           </div>
-          <div>
-            <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>Total Roster</span>
-            <strong style={{ fontSize: '1.25rem', color: '#fff' }}>{personnelList.length}</strong>
+          <div className="subpage-stat-icon-wrapper blue">
+            <Users size={15} />
           </div>
         </div>
 
-        <div
-          style={{
-            background: 'var(--panel)',
-            padding: '12px 16px',
-            borderRadius: '10px',
-            border: '1px solid var(--line)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              background: 'rgba(22, 214, 157, 0.15)',
-              color: 'var(--green)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ShieldCheck className="w-4 h-4" />
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>Base Commanders</span>
-            <strong style={{ fontSize: '1.25rem', color: '#fff' }}>
+        <div className="subpage-stat-card">
+          <div className="subpage-stat-info">
+            <span className="subpage-stat-label">Base Commanders</span>
+            <span className="subpage-stat-val" style={{ color: '#34d399' }}>
               {personnelList.filter((p) => p.role === 'BASE_COMMANDER').length}
-            </strong>
+            </span>
+            <span className="subpage-stat-badge green">▲ Base Cmd</span>
+          </div>
+          <div className="subpage-stat-icon-wrapper green">
+            <ShieldCheck size={15} />
           </div>
         </div>
 
-        <div
-          style={{
-            background: 'var(--panel)',
-            padding: '12px 16px',
-            borderRadius: '10px',
-            border: '1px solid var(--line)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              background: 'rgba(255, 189, 46, 0.15)',
-              color: 'var(--yellow)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Building className="w-4 h-4" />
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>Logistics Officers</span>
-            <strong style={{ fontSize: '1.25rem', color: '#fff' }}>
+        <div className="subpage-stat-card">
+          <div className="subpage-stat-info">
+            <span className="subpage-stat-label">Logistics Officers</span>
+            <span className="subpage-stat-val" style={{ color: '#fbbf24' }}>
               {personnelList.filter((p) => p.role === 'LOGISTICS_OFFICER').length}
-            </strong>
+            </span>
+            <span className="subpage-stat-badge yellow">◈ Logistics</span>
+          </div>
+          <div className="subpage-stat-icon-wrapper yellow">
+            <Building size={15} />
           </div>
         </div>
 
-        <div
-          style={{
-            background: 'var(--panel)',
-            padding: '12px 16px',
-            borderRadius: '10px',
-            border: '1px solid var(--line)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              background: 'rgba(154, 105, 245, 0.15)',
-              color: 'var(--purple)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Shield className="w-4 h-4" />
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block' }}>HQ Admins</span>
-            <strong style={{ fontSize: '1.25rem', color: '#fff' }}>
+        <div className="subpage-stat-card">
+          <div className="subpage-stat-info">
+            <span className="subpage-stat-label">HQ Admins</span>
+            <span className="subpage-stat-val" style={{ color: '#c084fc' }}>
               {personnelList.filter((p) => p.role === 'ADMIN').length}
-            </strong>
+            </span>
+            <span className="subpage-stat-badge purple">◈ Supreme HQ</span>
+          </div>
+          <div className="subpage-stat-icon-wrapper purple">
+            <Shield size={15} />
           </div>
         </div>
       </div>
 
-      {/* Filter & Search Controls */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1rem',
-          background: 'var(--panel)',
-          padding: '12px 16px',
-          borderRadius: '10px',
-          border: '1px solid var(--line)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '240px' }}>
-          <Search className="w-4 h-4 text-muted" style={{ color: 'var(--muted)' }} />
+      {/* Filter & Search Toolbar */}
+      <div className="filter-toolbar">
+        <div className="filter-search-wrap">
+          <Search size={14} className="filter-search-icon" />
           <input
             type="text"
             placeholder="Search by name, service ID, email, or base..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#ffffff',
-              fontSize: '12px',
-              outline: 'none',
-              width: '100%',
-            }}
+            className="filter-search-input"
           />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="filter-item-group">
           <select
             value={selectedBase}
             onChange={(e) => setSelectedBase(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
+            className="filter-select"
+            aria-label="Filter by Base"
           >
-            <option value="ALL">All Bases & Depots</option>
+            <option value="ALL">All Bases & Depots ({bases.length})</option>
             {bases.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}
           </select>
+        </div>
 
+        <div className="filter-item-group">
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
+            className="filter-select"
+            aria-label="Filter by Role"
           >
             <option value="ALL">All Roles</option>
             <option value="ADMIN">HQ ADMIN</option>
             <option value="BASE_COMMANDER">BASE COMMANDER</option>
             <option value="LOGISTICS_OFFICER">LOGISTICS OFFICER</option>
           </select>
+        </div>
 
+        <div className="filter-item-group">
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
+            className="filter-select"
+            aria-label="Filter by Status"
           >
             <option value="ALL">All Status</option>
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
           </select>
         </div>
+
+        {(searchTerm !== '' || selectedBase !== 'ALL' || selectedRole !== 'ALL' || selectedStatus !== 'ALL') && (
+          <button
+            className="filter-reset-btn"
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedBase('ALL');
+              setSelectedRole('ALL');
+              setSelectedStatus('ALL');
+            }}
+            title="Clear filters"
+          >
+            ✕ Reset
+          </button>
+        )}
       </div>
 
       {/* Personnel Roster Table */}
@@ -500,13 +406,13 @@ export const PersonnelPage = () => {
               <th>Assigned Base</th>
               <th>Official Email</th>
               <th>Operational Status</th>
-              <th style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>Actions</th>
+              <th style={{ textAlign: 'right', minWidth: '70px', whiteSpace: 'nowrap' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
                   Loading military personnel roster...
                 </td>
               </tr>
@@ -528,53 +434,33 @@ export const PersonnelPage = () => {
                   </td>
                   <td>
                     {p.baseName ? (
-                      <span style={{ color: 'var(--text)', fontWeight: 600 }}>{p.baseName}</span>
+                      <span style={{ color: 'var(--text)', fontWeight: 400 }}>{p.baseName}</span>
                     ) : (
-                      <span style={{ color: 'var(--muted)', fontSize: '11px' }}>National HQ Command</span>
+                      <span style={{ color: 'var(--muted)', fontSize: '10.5px' }}>National HQ Command</span>
                     )}
                   </td>
-                  <td style={{ color: 'var(--muted)', fontSize: '11px' }}>{p.email}</td>
+                  <td style={{ color: 'var(--muted)', fontSize: '10.5px' }}>{p.email}</td>
                   <td>
                     <b className={`pill ${p.status === 'ACTIVE' ? 'pgreen' : 'pred'}`}>
                       {p.status || 'ACTIVE'}
                     </b>
                   </td>
-                  <td style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'inline-flex', gap: '6px' }}>
+                  <td style={{ textAlign: 'right', minWidth: '70px', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'inline-flex', gap: '4px' }}>
                       <button
                         title="Edit Personnel"
                         onClick={() => handleOpenEdit(p)}
-                        style={{
-                          background: 'rgba(36, 153, 255, 0.15)',
-                          border: '1px solid rgba(36, 153, 255, 0.4)',
-                          color: '#2499ff',
-                          padding: '6px 8px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
+                        className="btn-action-edit"
                       >
-                        <Edit2 size={13} />
+                        <Edit2 size={11} />
                       </button>
                       {p.status === 'ACTIVE' && p.role !== 'ADMIN' && (
                         <button
                           title="Decommission Personnel"
                           onClick={() => handleOpenDelete(p)}
-                          style={{
-                            background: 'rgba(255, 80, 101, 0.15)',
-                            border: '1px solid rgba(255, 80, 101, 0.4)',
-                            color: '#ff5065',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
+                          className="btn-action-delete"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={11} />
                         </button>
                       )}
                     </div>
@@ -602,7 +488,7 @@ export const PersonnelPage = () => {
                   <UserPlus size={18} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>Register Defense Personnel</h3>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Register Defense Personnel</h3>
                   <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--muted)' }}>Deploy officer or logistics custodian into the military hierarchy</p>
                 </div>
               </div>
@@ -747,7 +633,7 @@ export const PersonnelPage = () => {
                   <Edit2 size={18} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>Edit Personnel Posting</h3>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Edit Personnel Posting</h3>
                   <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--muted)' }}>Modify posting and roles for {selectedPersonnel?.fullName || selectedPersonnel?.username}</p>
                 </div>
               </div>
@@ -890,7 +776,7 @@ export const PersonnelPage = () => {
                   <Trash2 size={18} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>Deactivate Personnel</h3>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Deactivate Personnel</h3>
                   <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--muted)' }}>Revoke system access for this officer?</p>
                 </div>
               </div>

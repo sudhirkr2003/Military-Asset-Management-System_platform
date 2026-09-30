@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import {
   ShoppingBag,
@@ -41,7 +41,7 @@ export const PurchasesPage = () => {
     remarks: ''
   });
 
-  const fetchLookups = async () => {
+  const fetchLookups = useCallback(async () => {
     try {
       const [basesRes, equipRes] = await Promise.all([
         api.get('/bases').catch(() => ({ data: { data: [] } })),
@@ -52,14 +52,13 @@ export const PurchasesPage = () => {
     } catch (err) {
       console.error('Error fetching lookups', err);
     }
-  };
+  }, []);
 
-  const fetchPurchases = async () => {
+  const fetchPurchases = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/movements');
       if (res.data?.data) {
-        // Filter only purchases
         const purchaseList = res.data.data.filter((m) => m.movementType === 'PURCHASE');
         setPurchases(purchaseList);
       }
@@ -68,7 +67,7 @@ export const PurchasesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLookups();
@@ -77,95 +76,125 @@ export const PurchasesPage = () => {
     const handleUpdate = () => fetchPurchases();
     window.addEventListener('mams:movement_updated', handleUpdate);
     return () => window.removeEventListener('mams:movement_updated', handleUpdate);
-  }, []);
+  }, [fetchLookups, fetchPurchases]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
   const handleRecordPurchase = async (e) => {
     e.preventDefault();
-    setFormLoading(true);
     setNotification({ type: '', message: '' });
 
+    const selectedBaseObj = bases.find((b) => Number(b.id) === Number(formData.baseId));
+    const selectedEqObj = equipmentTypes.find((eq) => Number(eq.id) === Number(formData.equipmentTypeId));
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticPurchase = {
+      id: tempId,
+      timestamp: new Date().toISOString(),
+      baseId: Number(formData.baseId),
+      baseName: selectedBaseObj?.name || 'Base #' + formData.baseId,
+      equipmentTypeId: Number(formData.equipmentTypeId),
+      equipmentName: selectedEqObj?.name || 'Equipment #' + formData.equipmentTypeId,
+      equipmentCategory: selectedEqObj?.category || 'EQUIPMENT',
+      quantity: Number(formData.quantity),
+      movementType: 'PURCHASE',
+      referenceId: formData.invoiceNumber || `PO-${Date.now().toString().slice(-6)}`,
+      remarks: formData.remarks || 'Standard asset procurement',
+      isOptimistic: true
+    };
+
+    // 1. Optimistically append purchase to list immediately
+    setPurchases((prev) => [optimisticPurchase, ...prev]);
+
+    // 2. Immediately notify user and clear form
+    setNotification({
+      type: 'success',
+      message: 'Procurement action dispatched! Inventory updating...'
+    });
+
+    const payload = {
+      baseId: Number(formData.baseId),
+      equipmentTypeId: Number(formData.equipmentTypeId),
+      quantity: Number(formData.quantity),
+      supplier: formData.supplier || 'Ministry of Defence Supply Depot',
+      invoiceNumber: formData.invoiceNumber || optimisticPurchase.referenceId,
+      remarks: formData.remarks || 'Standard asset procurement'
+    };
+
+    setFormData({
+      baseId: '',
+      equipmentTypeId: '',
+      quantity: 1,
+      supplier: '',
+      invoiceNumber: '',
+      remarks: ''
+    });
+
+    setTimeout(() => {
+      setShowAddForm(false);
+      setNotification({ type: '', message: '' });
+    }, 1200);
+
+    // 3. Dispatch background API call
     try {
-      const payload = {
-        baseId: Number(formData.baseId),
-        equipmentTypeId: Number(formData.equipmentTypeId),
-        quantity: Number(formData.quantity),
-        supplier: formData.supplier || 'Ministry of Defence Supply Depot',
-        invoiceNumber: formData.invoiceNumber || `PO-${Date.now().toString().slice(-6)}`,
-        remarks: formData.remarks || 'Standard asset procurement'
-      };
-
       const res = await api.post('/movements/purchase', payload);
-      setNotification({
-        type: 'success',
-        message: res.data?.message || 'Procurement recorded and base inventory updated successfully!'
-      });
-
-      setFormData({
-        baseId: '',
-        equipmentTypeId: '',
-        quantity: 1,
-        supplier: '',
-        invoiceNumber: '',
-        remarks: ''
-      });
-
-      fetchPurchases();
       window.dispatchEvent(new Event('mams:movement_updated'));
-
-      setTimeout(() => {
-        setShowAddForm(false);
-        setNotification({ type: '', message: '' });
-      }, 1600);
+      if (res.data?.data) {
+        setPurchases((prev) =>
+          prev.map((item) => (item.id === tempId ? { ...res.data.data, baseName: selectedBaseObj?.name, equipmentName: selectedEqObj?.name } : item))
+        );
+      } else {
+        fetchPurchases();
+      }
     } catch (err) {
+      // Rollback on failure
+      setPurchases((prev) => prev.filter((item) => item.id !== tempId));
       const errorMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        'Failed to record procurement. Please check the inputs.';
+        'Failed to record procurement. Rollback executed.';
       setNotification({ type: 'error', message: errorMsg });
-    } finally {
-      setFormLoading(false);
+      setShowAddForm(true);
     }
   };
 
   // Filter logic
-  const filteredPurchases = purchases.filter((item) => {
-    // Base filter
-    if (selectedBase !== 'ALL' && String(item.baseId) !== String(selectedBase)) {
-      return false;
-    }
-    // Equipment filter
-    if (selectedEquipment !== 'ALL' && String(item.equipmentTypeId) !== String(selectedEquipment)) {
-      return false;
-    }
-    // Date filter
-    if (startDate) {
-      const itemDate = new Date(item.timestamp);
-      if (itemDate < new Date(startDate)) return false;
-    }
-    if (endDate) {
-      const itemDate = new Date(item.timestamp);
-      const endDateTime = new Date(endDate);
-      endDateTime.setHours(23, 59, 59, 999);
-      if (itemDate > endDateTime) return false;
-    }
-    // Search query
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchName = item.equipmentName?.toLowerCase().includes(q);
-      const matchBase = item.baseName?.toLowerCase().includes(q);
-      const matchRemarks = item.remarks?.toLowerCase().includes(q);
-      const matchRef = item.referenceId?.toLowerCase().includes(q);
-      if (!matchName && !matchBase && !matchRemarks && !matchRef) return false;
-    }
-    return true;
-  });
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter((item) => {
+      if (selectedBase !== 'ALL' && String(item.baseId) !== String(selectedBase)) {
+        return false;
+      }
+      if (selectedEquipment !== 'ALL' && String(item.equipmentTypeId) !== String(selectedEquipment)) {
+        return false;
+      }
+      if (startDate) {
+        const itemDate = new Date(item.timestamp);
+        if (itemDate < new Date(startDate)) return false;
+      }
+      if (endDate) {
+        const itemDate = new Date(item.timestamp);
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        if (itemDate > endDateTime) return false;
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchName = item.equipmentName?.toLowerCase().includes(q);
+        const matchBase = item.baseName?.toLowerCase().includes(q);
+        const matchRemarks = item.remarks?.toLowerCase().includes(q);
+        const matchRef = item.referenceId?.toLowerCase().includes(q);
+        if (!matchName && !matchBase && !matchRemarks && !matchRef) return false;
+      }
+      return true;
+    });
+  }, [purchases, selectedBase, selectedEquipment, startDate, endDate, searchQuery]);
 
-  const totalQuantity = filteredPurchases.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
+  const totalQuantity = useMemo(() => {
+    return filteredPurchases.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
+  }, [filteredPurchases]);
 
   return (
     <div className="view-panel-container">
@@ -179,12 +208,12 @@ export const PurchasesPage = () => {
           <button
             className="action-trigger-btn"
             onClick={() => setShowAddForm(!showAddForm)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            title={showAddForm ? 'Close Form' : 'Record New Purchase'}
           >
-            <Plus size={15} /> {showAddForm ? 'Close Form' : 'Record New Purchase'}
+            <Plus size={15} /> <span className="btn-text">{showAddForm ? 'Close Form' : 'Record New Purchase'}</span>
           </button>
-          <button className="btn-secondary" onClick={fetchPurchases} disabled={loading}>
-            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchPurchases} disabled={loading} title="Refresh Purchases">
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
       </div>
@@ -198,7 +227,7 @@ export const PurchasesPage = () => {
             <span className="subpage-stat-badge green">▲ Verified Orders</span>
           </div>
           <div className="subpage-stat-icon-wrapper green">
-            <ShoppingBag size={20} />
+            <ShoppingBag size={15} />
           </div>
         </div>
 
@@ -211,7 +240,7 @@ export const PurchasesPage = () => {
             <span className="subpage-stat-badge green">▲ Added to Stock</span>
           </div>
           <div className="subpage-stat-icon-wrapper blue">
-            <Layers size={20} />
+            <Layers size={15} />
           </div>
         </div>
 
@@ -224,7 +253,7 @@ export const PurchasesPage = () => {
             <span className="subpage-stat-badge blue">◈ Active Bases</span>
           </div>
           <div className="subpage-stat-icon-wrapper yellow">
-            <Building size={20} />
+            <Building size={15} />
           </div>
         </div>
 
@@ -237,16 +266,16 @@ export const PurchasesPage = () => {
             <span className="subpage-stat-badge purple">◈ Equipment Lines</span>
           </div>
           <div className="subpage-stat-icon-wrapper purple">
-            <Shield size={20} />
+            <Shield size={15} />
           </div>
         </div>
       </div>
 
       {/* Collapsible Record Purchase Form Card */}
       {showAddForm && (
-        <div className="view-table-card" style={{ marginBottom: '24px', border: '1px solid rgba(147, 197, 253, 0.3)', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85))' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="view-table-card" style={{ marginBottom: '24px', border: '1px solid var(--line)', background: 'var(--panel)', padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <ShoppingBag size={18} /> Record Asset Purchase & Indent
             </h3>
             <button
@@ -380,20 +409,28 @@ export const PurchasesPage = () => {
         </div>
       )}
 
-      {/* Filter Bar (Date, Base, Equipment Type, Search) */}
-      <div className="card" style={{ padding: '14px 18px', marginBottom: '18px', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#93c5fd', fontWeight: 600, fontSize: '13px' }}>
-          <Filter size={15} /> Filters:
+      {/* Filter & Search Toolbar */}
+      <div className="filter-toolbar">
+        {/* Search */}
+        <div className="filter-search-wrap">
+          <Search size={14} className="filter-search-icon" />
+          <input
+            type="text"
+            placeholder="Search invoice, remarks, asset..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="filter-search-input"
+          />
         </div>
 
         {/* Base Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Building size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-item-group">
+          <Building size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           <select
             value={selectedBase}
             onChange={(e) => setSelectedBase(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Base"
           >
             <option value="ALL">All Bases ({bases.length})</option>
             {bases.map((b) => (
@@ -405,15 +442,15 @@ export const PurchasesPage = () => {
         </div>
 
         {/* Equipment Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Shield size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-item-group">
+          <Shield size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           <select
             value={selectedEquipment}
             onChange={(e) => setSelectedEquipment(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Equipment Type"
           >
-            <option value="ALL">All Equipment Types ({equipmentTypes.length})</option>
+            <option value="ALL">All Equipment ({equipmentTypes.length})</option>
             {equipmentTypes.map((eq) => (
               <option key={eq.id} value={eq.id}>
                 {eq.name} ({eq.category})
@@ -422,59 +459,41 @@ export const PurchasesPage = () => {
           </select>
         </div>
 
-        {/* Start Date */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Calendar size={14} style={{ color: 'var(--muted)' }} />
+        {/* Date Range */}
+        <div className="filter-date-wrap">
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="modal-input"
-            style={{ width: 'auto', padding: '5px 10px', fontSize: '12px' }}
+            className="filter-date-input"
             title="Start Date"
           />
-        </div>
-
-        {/* End Date */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>to</span>
+          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>to</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="modal-input"
-            style={{ width: 'auto', padding: '5px 10px', fontSize: '12px' }}
+            className="filter-date-input"
             title="End Date"
           />
         </div>
 
-        {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
-          <Search size={14} style={{ color: 'var(--muted)' }} />
-          <input
-            type="text"
-            placeholder="Search invoice, remarks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="modal-input"
-            style={{ width: '180px', padding: '5px 10px', fontSize: '12px' }}
-          />
-          {(selectedBase !== 'ALL' || selectedEquipment !== 'ALL' || startDate || endDate || searchQuery) && (
-            <button
-              className="btn-secondary"
-              onClick={() => {
-                setSelectedBase('ALL');
-                setSelectedEquipment('ALL');
-                setStartDate('');
-                setEndDate('');
-                setSearchQuery('');
-              }}
-              style={{ padding: '4px 8px', fontSize: '11px' }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+        {/* Reset Filter Button */}
+        {(selectedBase !== 'ALL' || selectedEquipment !== 'ALL' || startDate !== '' || endDate !== '' || searchQuery !== '') && (
+          <button
+            className="filter-reset-btn"
+            onClick={() => {
+              setSelectedBase('ALL');
+              setSelectedEquipment('ALL');
+              setStartDate('');
+              setEndDate('');
+              setSearchQuery('');
+            }}
+            title="Clear all filters"
+          >
+            ✕ Reset
+          </button>
+        )}
       </div>
 
       {/* Historical Purchases Table */}
@@ -498,20 +517,25 @@ export const PurchasesPage = () => {
               filteredPurchases.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 600 }}>
+                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 400 }}>
                       #PUR-{p.id}
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
-                      {p.timestamp ? new Date(p.timestamp).toLocaleString() : 'N/A'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        {p.timestamp ? new Date(p.timestamp).toLocaleDateString() : 'Today'}
+                      </span>
+                      <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                        {p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
+                      </span>
+                    </div>
                   </td>
                   <td>
                     <strong>{p.baseName}</strong>
                   </td>
                   <td>
-                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                    <span style={{ fontWeight: 400, color: 'var(--text)' }}>
                       {p.equipmentName}
                     </span>
                   </td>
@@ -519,7 +543,7 @@ export const PurchasesPage = () => {
                     <b className="pill pblue">{p.equipmentCategory || 'EQUIPMENT'}</b>
                   </td>
                   <td>
-                    <b className="pill pgreen" style={{ fontSize: '12px', fontWeight: 700 }}>
+                    <b className="pill pgreen" style={{ fontSize: '12px', fontWeight: 400 }}>
                       +{Number(p.quantity).toLocaleString()}
                     </b>
                   </td>

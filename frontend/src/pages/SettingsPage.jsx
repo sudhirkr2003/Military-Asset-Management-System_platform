@@ -274,7 +274,7 @@ export const SettingsPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '24px' }}>🛡️</span>
             <div>
-              <h2 style={{ fontSize: '18px', color: '#fff', margin: 0 }}>Military Asset Management System (MAMS)</h2>
+              <h2 style={{ fontSize: '18px', color: 'var(--text-heading)', margin: 0 }}>Military Asset Management System (MAMS)</h2>
               <small style={{ color: 'var(--muted)', fontSize: '12px' }}>Public Technical Architecture & OpenAPI Specification</small>
             </div>
           </div>
@@ -314,7 +314,7 @@ export const SettingsPage = () => {
 
       {/* Search & Filter Bar */}
       <div className="card" style={{ padding: '12px 18px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#93c5fd', fontSize: '13px', fontWeight: 600 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--blue)', fontSize: '13px', fontWeight: 600 }}>
           <BookOpen size={16} /> API Directory ({totalEndpointsCount} Endpoints across 8 Defense Modules)
         </div>
 
@@ -343,11 +343,11 @@ export const SettingsPage = () => {
 
           return (
             <div key={mIdx} className="view-table-card" style={{ padding: '18px 20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '18px' }}>{mod.icon}</span>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-heading)' }}>
                       {mod.category}
                     </h3>
                     <small style={{ color: 'var(--muted)', fontSize: '11.5px' }}>{mod.description}</small>
@@ -381,31 +381,31 @@ export const SettingsPage = () => {
                             className="pill"
                             style={{
                               fontSize: '10.5px',
-                              fontWeight: 700,
+                              fontWeight: 600,
                               background:
                                 ep.method === 'GET'
-                                  ? 'rgba(22, 214, 157, 0.15)'
+                                  ? 'rgba(5, 150, 105, 0.12)'
                                   : ep.method === 'POST'
-                                  ? 'rgba(36, 153, 255, 0.15)'
+                                  ? 'rgba(2, 132, 199, 0.12)'
                                   : ep.method === 'PUT'
-                                  ? 'rgba(251, 191, 36, 0.15)'
-                                  : 'rgba(239, 68, 68, 0.15)',
+                                  ? 'rgba(217, 119, 6, 0.12)'
+                                  : 'rgba(220, 38, 38, 0.12)',
                               color:
                                 ep.method === 'GET'
-                                  ? '#16d69d'
+                                  ? 'var(--green)'
                                   : ep.method === 'POST'
-                                  ? '#38bdf8'
+                                  ? 'var(--blue)'
                                   : ep.method === 'PUT'
-                                  ? '#fbbf24'
-                                  : '#f87171',
+                                  ? 'var(--yellow)'
+                                  : 'var(--red)',
                               border: `1px solid ${
                                 ep.method === 'GET'
-                                  ? 'rgba(22, 214, 157, 0.3)'
+                                  ? 'rgba(5, 150, 105, 0.3)'
                                   : ep.method === 'POST'
-                                  ? 'rgba(36, 153, 255, 0.3)'
+                                  ? 'rgba(2, 132, 199, 0.3)'
                                   : ep.method === 'PUT'
-                                  ? 'rgba(251, 191, 36, 0.3)'
-                                  : 'rgba(239, 68, 68, 0.3)'
+                                  ? 'rgba(217, 119, 6, 0.3)'
+                                  : 'rgba(220, 38, 38, 0.3)'
                               }`
                             }}
                           >
@@ -413,7 +413,7 @@ export const SettingsPage = () => {
                           </b>
                         </td>
                         <td>
-                          <code style={{ color: '#93c5fd', fontSize: '12px', fontWeight: 600, fontFamily: 'monospace' }}>
+                          <code style={{ color: 'var(--blue)', fontSize: '12.5px', fontWeight: 600, fontFamily: 'monospace' }}>
                             {ep.path}
                           </code>
                         </td>
@@ -466,35 +466,35 @@ export const SettingsPage = () => {
       {activeTestEndpoint && (
         <div className="modal-backdrop" onClick={() => setActiveTestEndpoint(null)}>
           <div className="modal-content" style={{ maxWidth: '680px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #163644' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <b
                   className="pill"
                   style={{
                     fontSize: '11px',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     background:
                       activeTestEndpoint.method === 'GET'
-                        ? 'rgba(22, 214, 157, 0.2)'
+                        ? 'rgba(5, 150, 105, 0.15)'
                         : activeTestEndpoint.method === 'POST'
-                        ? 'rgba(36, 153, 255, 0.2)'
+                        ? 'rgba(2, 132, 199, 0.15)'
                         : activeTestEndpoint.method === 'PUT'
-                        ? 'rgba(251, 191, 36, 0.2)'
-                        : 'rgba(239, 68, 68, 0.2)',
+                        ? 'rgba(217, 119, 6, 0.15)'
+                        : 'rgba(220, 38, 38, 0.15)',
                     color:
                       activeTestEndpoint.method === 'GET'
-                        ? '#16d69d'
+                        ? 'var(--green)'
                         : activeTestEndpoint.method === 'POST'
-                        ? '#38bdf8'
+                        ? 'var(--blue)'
                         : activeTestEndpoint.method === 'PUT'
-                        ? '#fbbf24'
-                        : '#f87171'
+                        ? 'var(--yellow)'
+                        : 'var(--red)'
                   }}
                 >
                   {activeTestEndpoint.method}
                 </b>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#ffffff', fontFamily: 'monospace' }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-heading)', fontFamily: 'monospace' }}>
                     {activeTestEndpoint.path}
                   </h3>
                   <small style={{ color: 'var(--muted)', fontSize: '11px' }}>{activeTestEndpoint.desc}</small>
@@ -600,7 +600,7 @@ export const SettingsPage = () => {
       {/* System Technical Architecture & Specs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginTop: '20px' }}>
         <div className="view-table-card" style={{ padding: '18px 20px' }}>
-          <h4 style={{ color: '#93c5fd', fontSize: '13px', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 style={{ color: 'var(--blue)', fontSize: '13px', fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Server size={16} /> Backend Architecture
           </h4>
           <ul style={{ color: 'var(--muted)', fontSize: '12px', lineHeight: 1.6, paddingLeft: '18px', margin: 0 }}>
@@ -612,7 +612,7 @@ export const SettingsPage = () => {
         </div>
 
         <div className="view-table-card" style={{ padding: '18px 20px' }}>
-          <h4 style={{ color: '#93c5fd', fontSize: '13px', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 style={{ color: 'var(--blue)', fontSize: '13px', fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Database size={16} /> Relational Data Layer
           </h4>
           <ul style={{ color: 'var(--muted)', fontSize: '12px', lineHeight: 1.6, paddingLeft: '18px', margin: 0 }}>

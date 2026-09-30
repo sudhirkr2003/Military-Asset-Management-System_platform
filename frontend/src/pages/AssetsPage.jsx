@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
@@ -55,7 +55,7 @@ export const AssetsPage = () => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  const fetchEquipment = async () => {
+  const fetchEquipment = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/equipment');
@@ -67,11 +67,11 @@ export const AssetsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchEquipment();
-  }, []);
+  }, [fetchEquipment]);
 
   const categories = [
     { label: 'All Categories', value: 'ALL', icon: Layers },
@@ -210,16 +210,18 @@ export const AssetsPage = () => {
   };
 
   // Filtering
-  const filteredAssets = equipmentList.filter((eq) => {
-    const matchesCategory = selectedCategory === 'ALL' || eq.category === selectedCategory;
-    const matchesStatus = selectedStatus === 'ALL' || eq.status === selectedStatus;
-    const matchesSearch =
-      searchTerm === '' ||
-      eq.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesStatus && matchesSearch;
-  });
+  const filteredAssets = useMemo(() => {
+    return equipmentList.filter((eq) => {
+      const matchesCategory = selectedCategory === 'ALL' || eq.category === selectedCategory;
+      const matchesStatus = selectedStatus === 'ALL' || eq.status === selectedStatus;
+      const matchesSearch =
+        searchTerm === '' ||
+        eq.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesStatus && matchesSearch;
+    });
+  }, [equipmentList, selectedCategory, selectedStatus, searchTerm]);
 
   const getCategoryBadgeClass = (cat) => {
     switch (cat) {
@@ -249,64 +251,36 @@ export const AssetsPage = () => {
           </small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchEquipment} disabled={loading}>
-            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchEquipment} disabled={loading} title="Refresh Assets">
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
           {canCreate && (
-            <button className="btn-primary" onClick={handleOpenAdd}>
-              <Plus size={13} className="inline mr-1" /> + Register New Asset
+            <button className="btn-primary" onClick={handleOpenAdd} title="Register New Asset">
+              <Plus size={14} className="inline mr-1" /> <span className="btn-text">Register New Asset</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1rem',
-          background: 'var(--panel)',
-          padding: '12px 16px',
-          borderRadius: '10px',
-          border: '1px solid var(--line)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '240px' }}>
-          <Search className="w-4 h-4 text-muted" style={{ color: 'var(--muted)' }} />
+      {/* Filter & Search Toolbar */}
+      <div className="filter-toolbar">
+        <div className="filter-search-wrap">
+          <Search size={14} className="filter-search-icon" />
           <input
             type="text"
             placeholder="Search assets by name, code (e.g. WPN, T-90)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#ffffff',
-              fontSize: '13px',
-              outline: 'none',
-              width: '100%',
-            }}
+            className="filter-search-input"
           />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="filter-item-group">
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Category"
           >
             {categories.map((c) => (
               <option key={c.value} value={c.value}>
@@ -314,18 +288,34 @@ export const AssetsPage = () => {
               </option>
             ))}
           </select>
+        </div>
 
+        <div className="filter-item-group">
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 12px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Status"
           >
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active Only</option>
             <option value="INACTIVE">Inactive Only</option>
           </select>
         </div>
+
+        {(searchTerm !== '' || selectedCategory !== 'ALL' || selectedStatus !== 'ALL') && (
+          <button
+            className="filter-reset-btn"
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('ALL');
+              setSelectedStatus('ALL');
+            }}
+            title="Clear filters"
+          >
+            ✕ Reset
+          </button>
+        )}
       </div>
 
       {/* Asset Table */}
@@ -341,14 +331,14 @@ export const AssetsPage = () => {
               <th>Status</th>
               <th>Description / Specifications</th>
               {hasAnyAction && (
-                <th style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>Actions</th>
+                <th style={{ textAlign: 'right', minWidth: '70px', whiteSpace: 'nowrap' }}>Actions</th>
               )}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={hasAnyAction ? 8 : 7} style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>
+                <td colSpan={hasAnyAction ? 8 : 7} style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
                   Loading military defense assets...
                 </td>
               </tr>
@@ -371,11 +361,11 @@ export const AssetsPage = () => {
                   <td>{eq.unit || 'units'}</td>
                   <td>
                     {eq.isConsumable ? (
-                      <span style={{ color: 'var(--yellow)', fontSize: '12.5px', fontWeight: 600 }}>
-                        ● Consumable / Ordnance
+                      <span style={{ color: 'var(--yellow)', fontSize: '11px', fontWeight: 400 }}>
+                        ● Consumable
                       </span>
                     ) : (
-                      <span style={{ color: 'var(--green)', fontSize: '12.5px' }}>● Durable Asset</span>
+                      <span style={{ color: 'var(--green)', fontSize: '11px' }}>● Durable</span>
                     )}
                   </td>
                   <td>
@@ -386,55 +376,34 @@ export const AssetsPage = () => {
                   <td
                     style={{
                       color: 'var(--muted)',
-                      fontSize: '12.5px',
-                      maxWidth: '300px',
+                      fontSize: '11px',
+                      maxWidth: '240px',
                       whiteSpace: 'normal',
                       wordBreak: 'break-word',
-                      paddingRight: '24px',
-                      lineHeight: '1.4',
+                      lineHeight: '1.25',
                     }}
                   >
                     {eq.description || '-'}
                   </td>
                   {hasAnyAction && (
-                    <td style={{ textAlign: 'right', minWidth: '95px', paddingLeft: '20px', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'inline-flex', gap: '6px' }}>
+                    <td style={{ textAlign: 'right', minWidth: '70px', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'inline-flex', gap: '4px' }}>
                         {canEdit && (
                           <button
                             title="Edit Asset"
                             onClick={() => handleOpenEdit(eq)}
-                            style={{
-                              background: 'rgba(36, 153, 255, 0.15)',
-                              border: '1px solid rgba(36, 153, 255, 0.4)',
-                              color: '#2499ff',
-                              padding: '6px 8px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
+                            className="btn-action-edit"
                           >
-                            <Edit2 size={13} />
+                            <Edit2 size={11} />
                           </button>
                         )}
                         {canDelete && eq.status === 'ACTIVE' && (
                           <button
                             title="Deactivate Asset"
                             onClick={() => handleOpenDelete(eq)}
-                            style={{
-                              background: 'rgba(255, 80, 101, 0.15)',
-                              border: '1px solid rgba(255, 80, 101, 0.4)',
-                              color: '#ff5065',
-                              padding: '6px 8px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
+                            className="btn-action-delete"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={11} />
                           </button>
                         )}
                       </div>

@@ -22,31 +22,35 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final InventoryRepository inventoryRepository;
     private final MovementLedgerRepository movementLedgerRepository;
+    private final com.mams.security.SecurityUtils securityUtils;
 
     public DashboardServiceImpl(InventoryRepository inventoryRepository,
-                                MovementLedgerRepository movementLedgerRepository) {
+                                MovementLedgerRepository movementLedgerRepository,
+                                com.mams.security.SecurityUtils securityUtils) {
         this.inventoryRepository = inventoryRepository;
         this.movementLedgerRepository = movementLedgerRepository;
+        this.securityUtils = securityUtils;
     }
 
     @Override
     @Transactional(readOnly = true)
     public DashboardSummaryDto getSummary(Long baseId, Long equipmentTypeId, String period) {
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
         LocalDateTime startDate = calculateStartDate(period);
         LocalDateTime endDate = LocalDateTime.now();
 
-        Long openingBalance = inventoryRepository.sumOpeningBalance(baseId, equipmentTypeId);
-        Long availableQuantity = inventoryRepository.sumAvailableQuantity(baseId, equipmentTypeId);
-        Long assignedQuantity = inventoryRepository.sumAssignedQuantity(baseId, equipmentTypeId);
-        Long expendedQuantity = inventoryRepository.sumExpendedQuantity(baseId, equipmentTypeId);
-        Long closingBalance = inventoryRepository.sumClosingBalance(baseId, equipmentTypeId);
+        Long openingBalance = inventoryRepository.sumOpeningBalance(effectiveBaseId, equipmentTypeId);
+        Long availableQuantity = inventoryRepository.sumAvailableQuantity(effectiveBaseId, equipmentTypeId);
+        Long assignedQuantity = inventoryRepository.sumAssignedQuantity(effectiveBaseId, equipmentTypeId);
+        Long expendedQuantity = inventoryRepository.sumExpendedQuantity(effectiveBaseId, equipmentTypeId);
+        Long closingBalance = inventoryRepository.sumClosingBalance(effectiveBaseId, equipmentTypeId);
 
         Long purchases = movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                MovementType.PURCHASE, baseId, equipmentTypeId, startDate, endDate);
+                MovementType.PURCHASE, effectiveBaseId, equipmentTypeId, startDate, endDate);
         Long transferIn = movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                MovementType.TRANSFER_IN, baseId, equipmentTypeId, startDate, endDate);
+                MovementType.TRANSFER_IN, effectiveBaseId, equipmentTypeId, startDate, endDate);
         Long transferOut = movementLedgerRepository.sumQuantityByMovementTypeAndFilters(
-                MovementType.TRANSFER_OUT, baseId, equipmentTypeId, startDate, endDate);
+                MovementType.TRANSFER_OUT, effectiveBaseId, equipmentTypeId, startDate, endDate);
 
         long safeOpening = openingBalance != null ? openingBalance : 0;
         long safePurchases = purchases != null ? purchases : 0;
@@ -73,7 +77,8 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public List<MovementLedgerDto> getRecentMovements(Long baseId) {
-        return movementLedgerRepository.findRecentMovements(baseId).stream()
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
+        return movementLedgerRepository.findRecentMovements(effectiveBaseId).stream()
                 .limit(10)
                 .map(this::mapMovementToDto)
                 .collect(Collectors.toList());
@@ -82,8 +87,9 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getInventoryByCategory(Long baseId) {
-        List<Inventory> inventories = baseId != null
-                ? inventoryRepository.findByBaseId(baseId)
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
+        List<Inventory> inventories = effectiveBaseId != null
+                ? inventoryRepository.findByBaseId(effectiveBaseId)
                 : inventoryRepository.findAll();
 
         Map<String, Long> categoryCounts = new HashMap<>();

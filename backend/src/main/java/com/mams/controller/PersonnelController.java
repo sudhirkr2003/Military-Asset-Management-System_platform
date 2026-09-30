@@ -21,6 +21,7 @@ import java.util.List;
 @RequestMapping("/api/personnel")
 @Tag(name = "Personnel", description = "Endpoints for managing military officers, base commanders, logistics officers, and soldiers")
 @SecurityRequirement(name = "BearerAuth")
+@PreAuthorize("hasRole('ADMIN')")
 public class PersonnelController {
 
     private final PersonnelService personnelService;

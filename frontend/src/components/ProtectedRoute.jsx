@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export const ProtectedRoute = ({ children, allowedRoles }) => {
+export const ProtectedRoute = React.memo(({ children, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
 
@@ -21,7 +21,10 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && (!user || !allowedRoles.includes(user.role))) {
+  const normalizedUserRole = (user?.role || '').replace(/^ROLE_/, '');
+  const normalizedAllowedRoles = allowedRoles?.map((r) => r.replace(/^ROLE_/, ''));
+
+  if (normalizedAllowedRoles && (!normalizedUserRole || !normalizedAllowedRoles.includes(normalizedUserRole))) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
         <div className="bg-slate-900 border border-red-500/30 rounded-xl p-8 max-w-md text-center">
@@ -37,4 +40,4 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   return children;
-};
+});

@@ -26,18 +26,25 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    public String generateToken(String username, String role, Long baseId) {
+    public String generateToken(Long userId, String username, String role, Long baseId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
+        String roleWithPrefix = role != null && role.startsWith("ROLE_") ? role : "ROLE_" + role;
+
         return Jwts.builder()
                 .subject(username)
-                .claim("role", role)
+                .claim("userId", userId)
+                .claim("role", roleWithPrefix)
                 .claim("baseId", baseId)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key())
                 .compact();
+    }
+
+    public String generateToken(String username, String role, Long baseId) {
+        return generateToken(null, username, role, baseId);
     }
 
     public String getUsernameFromToken(String token) {

@@ -1,21 +1,133 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import {
   LogOut,
   X,
+  Menu,
   CheckCircle2,
   AlertCircle,
+  LayoutDashboard,
+  ShoppingCart,
+  ArrowLeftRight,
+  UserCheck,
+  Crosshair,
+  Package,
+  ClipboardList,
+  Building2,
+  Users,
+  BarChart3,
+  BookOpen,
+  ChevronRight,
+  Shield,
+  Activity,
+  PanelLeftClose,
+  PanelLeft,
+  ChevronDown,
+  ShieldCheck,
+  Plus,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const DashboardLayout = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const userRole = (user?.role || '').replace(/^ROLE_/, '');
+
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [sidebarProfileOpen, setSidebarProfileOpen] = useState(false);
+  const profileMenuRef = React.useRef(null);
+  const sidebarProfileRef = React.useRef(null);
+
+  // Auto-close mobile drawer and dropdowns on route navigation
+  useEffect(() => {
+    setMobileNavOpen(false);
+    setProfileMenuOpen(false);
+    setSidebarProfileOpen(false);
+  }, [location.pathname]);
+
+  // Click-outside listener for top-right profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+      if (sidebarProfileRef.current && !sidebarProfileRef.current.contains(event.target)) {
+        setSidebarProfileOpen(false);
+      }
+    };
+    if (profileMenuOpen || sidebarProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [profileMenuOpen, sidebarProfileOpen]);
+
+  const getInitials = (name) => {
+    if (!name) return 'HQ';
+    const parts = name.replace(/^(Col\.|Capt\.|Maj\.|Gen\.|Lt\.|Adm\.)\s+/i, '').trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
   // Lookup Options from Backend
   const [bases, setBases] = useState([]);
   const [equipmentTypes, setEquipmentTypes] = useState([]);
+
+  // Route prefetching for instant page transitions
+  const prefetchedRoutes = React.useRef(new Set());
+
+  const handlePrefetchRoute = React.useCallback((path) => {
+    if (prefetchedRoutes.current.has(path)) return;
+    prefetchedRoutes.current.add(path);
+
+    switch (path) {
+      case '/purchases':
+        api.get('/movements/purchase').catch(() => {});
+        api.get('/bases').catch(() => {});
+        api.get('/equipment').catch(() => {});
+        break;
+      case '/transfers':
+        api.get('/movements/transfer').catch(() => {});
+        api.get('/bases').catch(() => {});
+        api.get('/equipment').catch(() => {});
+        break;
+      case '/assignments':
+        api.get('/movements/assignments').catch(() => {});
+        api.get('/bases').catch(() => {});
+        api.get('/equipment').catch(() => {});
+        break;
+      case '/assets':
+        api.get('/equipment').catch(() => {});
+        break;
+      case '/inventory':
+        api.get('/inventory').catch(() => {});
+        break;
+      case '/movements':
+        api.get('/movements').catch(() => {});
+        break;
+      case '/bases':
+        api.get('/bases').catch(() => {});
+        break;
+      case '/personnel':
+        api.get('/personnel').catch(() => {});
+        api.get('/bases').catch(() => {});
+        break;
+      case '/reports':
+        api.get('/dashboard/summary').catch(() => {});
+        api.get('/bases').catch(() => {});
+        break;
+      default:
+        break;
+    }
+  }, []);
 
   // Movement Action Modal State
   const [showActionModal, setShowActionModal] = useState(false);
@@ -166,70 +278,268 @@ export const DashboardLayout = () => {
 
   return (
     <div className="app">
-      {/* 1. SIDEBAR */}
-      <aside className="sidebar">
+      {/* Mobile Nav Backdrop */}
+      {mobileNavOpen && (
+        <div className="mobile-nav-backdrop" onClick={() => setMobileNavOpen(false)} />
+      )}
+
+      {/* 1. SIDEBAR (SUPPORTS LIGHT THEME, DESKTOP COLLAPSE & MOBILE SLIDE-OUT DRAWER) */}
+      <aside className={`sidebar ${desktopSidebarOpen ? '' : 'desktop-collapsed'} ${mobileNavOpen ? 'mobile-open' : ''}`}>
         <div className="brand">
-          <div className="logo">◇</div>
-          <div>
-            <strong>MAMS</strong>
-            <small>Military Asset<br />Management System</small>
+          <div className="logo-shield">
+            <Shield className="logo-shield-icon" size={20} />
           </div>
+          <div>
+            <strong>MAMS DEFENSE</strong>
+            <small>Asset Logistics Platform</small>
+          </div>
+          <button
+            className="mobile-sidebar-close-btn"
+            onClick={() => setMobileNavOpen(false)}
+            aria-label="Close navigation"
+          >
+            <X size={18} />
+          </button>
         </div>
-        <nav>
-          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>⌂</span>Dashboard
+        <nav className="sidebar-nav">
+          <div className="nav-section-label">COMMAND & OPERATIONS</div>
+
+          <NavLink
+            to="/dashboard"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/dashboard')}
+            onFocus={() => handlePrefetchRoute('/dashboard')}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <LayoutDashboard size={16} className="nav-icon" />
+            <span className="nav-text">Dashboard</span>
           </NavLink>
 
-          {(user?.role === 'ADMIN' || user?.role === 'LOGISTICS_OFFICER') && (
-            <NavLink to="/purchases" className={({ isActive }) => (isActive ? 'active' : '')}>
-              <span>🛒</span>Purchases <b>›</b>
+          {(userRole === 'ADMIN' || userRole === 'LOGISTICS_OFFICER' || userRole === 'BASE_COMMANDER') && (
+            <NavLink
+              to="/purchases"
+              onClick={() => setMobileNavOpen(false)}
+              onMouseEnter={() => handlePrefetchRoute('/purchases')}
+              onFocus={() => handlePrefetchRoute('/purchases')}
+              className={({ isActive }) =>
+                `nav-link ${isActive || location.pathname.startsWith('/movements/purchase') ? 'active' : ''}`
+              }
+            >
+              <ShoppingCart size={16} className="nav-icon" />
+              <span className="nav-text">Procurements</span>
+              <ChevronRight size={13} className="nav-chevron" />
             </NavLink>
           )}
 
-          {(user?.role === 'ADMIN' || user?.role === 'LOGISTICS_OFFICER') && (
-            <NavLink to="/transfers" className={({ isActive }) => (isActive ? 'active' : '')}>
-              <span>🔄</span>Transfers <b>›</b>
+          {(userRole === 'ADMIN' || userRole === 'LOGISTICS_OFFICER' || userRole === 'BASE_COMMANDER') && (
+            <NavLink
+              to="/transfers"
+              onClick={() => setMobileNavOpen(false)}
+              onMouseEnter={() => handlePrefetchRoute('/transfers')}
+              onFocus={() => handlePrefetchRoute('/transfers')}
+              className={({ isActive }) =>
+                `nav-link ${isActive || location.pathname.startsWith('/movements/transfer') ? 'active' : ''}`
+              }
+            >
+              <ArrowLeftRight size={16} className="nav-icon" />
+              <span className="nav-text">Base Transfers</span>
+              <ChevronRight size={13} className="nav-chevron" />
             </NavLink>
           )}
 
-          {(user?.role === 'ADMIN' || user?.role === 'BASE_COMMANDER') && (
-            <NavLink to="/assignments" className={({ isActive }) => (isActive ? 'active' : '')}>
-              <span>👤</span>Assignments & Expended <b>›</b>
+          {(userRole === 'ADMIN' || userRole === 'BASE_COMMANDER') && (
+            <NavLink
+              to="/assignments"
+              onClick={() => setMobileNavOpen(false)}
+              onMouseEnter={() => handlePrefetchRoute('/assignments')}
+              onFocus={() => handlePrefetchRoute('/assignments')}
+              className={({ isActive }) =>
+                `nav-link ${
+                  isActive ||
+                  location.pathname.startsWith('/movements/assign') ||
+                  location.pathname.startsWith('/movements/expend') ||
+                  location.pathname.startsWith('/movements/return')
+                    ? 'active'
+                    : ''
+                }`
+              }
+            >
+              <UserCheck size={16} className="nav-icon" />
+              <span className="nav-text">Assignments</span>
+              <ChevronRight size={13} className="nav-chevron" />
             </NavLink>
           )}
 
-          <NavLink to="/assets" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>◇</span>Assets <b>›</b>
+          <div className="nav-section-label" style={{ marginTop: '12px' }}>DEFENSE REGISTRY</div>
+
+          <NavLink
+            to="/assets"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/assets')}
+            onFocus={() => handlePrefetchRoute('/assets')}
+            className={({ isActive }) =>
+              `nav-link ${isActive || location.pathname.startsWith('/equipment') ? 'active' : ''}`
+            }
+          >
+            <Crosshair size={16} className="nav-icon" />
+            <span className="nav-text">Asset Catalog</span>
+            <ChevronRight size={13} className="nav-chevron" />
           </NavLink>
 
-          <NavLink to="/inventory" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>▱</span>Inventory <b>›</b>
+          <NavLink
+            to="/inventory"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/inventory')}
+            onFocus={() => handlePrefetchRoute('/inventory')}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <Package size={16} className="nav-icon" />
+            <span className="nav-text">Armory Stock</span>
+            <ChevronRight size={13} className="nav-chevron" />
           </NavLink>
 
-          <NavLink to="/movements" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>📋</span>Ledger <b>›</b>
+          <NavLink
+            to="/movements"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/movements')}
+            onFocus={() => handlePrefetchRoute('/movements')}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <ClipboardList size={16} className="nav-icon" />
+            <span className="nav-text">Audit Ledger</span>
+            <ChevronRight size={13} className="nav-chevron" />
           </NavLink>
 
-          <NavLink to="/bases" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>⌖</span>Bases <b>›</b>
+          <NavLink
+            to="/bases"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/bases')}
+            onFocus={() => handlePrefetchRoute('/bases')}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <Building2 size={16} className="nav-icon" />
+            <span className="nav-text">Installations</span>
+            <ChevronRight size={13} className="nav-chevron" />
           </NavLink>
 
-          {user?.role === 'ADMIN' && (
-            <NavLink to="/personnel" className={({ isActive }) => (isActive ? 'active' : '')}>
-              <span>♙</span>Personnel <b>›</b>
+          {userRole === 'ADMIN' && (
+            <NavLink
+              to="/personnel"
+              onClick={() => setMobileNavOpen(false)}
+              onMouseEnter={() => handlePrefetchRoute('/personnel')}
+              onFocus={() => handlePrefetchRoute('/personnel')}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              <Users size={16} className="nav-icon" />
+              <span className="nav-text">Personnel</span>
+              <ChevronRight size={13} className="nav-chevron" />
             </NavLink>
           )}
 
-          <NavLink to="/reports" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>▥</span>Reports <b>›</b>
+          <div className="nav-section-label" style={{ marginTop: '12px' }}>INTELLIGENCE & DOCS</div>
+
+          <NavLink
+            to="/reports"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/reports')}
+            onFocus={() => handlePrefetchRoute('/reports')}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <BarChart3 size={16} className="nav-icon" />
+            <span className="nav-text">Reports & Exports</span>
+            <ChevronRight size={13} className="nav-chevron" />
           </NavLink>
 
-          <NavLink to="/docs" className={({ isActive }) => (isActive ? 'active' : '')}>
-            <span>📖</span>Documentation <b>›</b>
+          <NavLink
+            to="/docs"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/docs')}
+            onFocus={() => handlePrefetchRoute('/docs')}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <BookOpen size={16} className="nav-icon" />
+            <span className="nav-text">API Specs Hub</span>
+            <ChevronRight size={13} className="nav-chevron" />
           </NavLink>
         </nav>
-        <div className="quote">
-          <i></i>Strength<br />Through<br />Accountability
+
+        {/* Sidebar Bottom Standalone Profile Button */}
+        <div className="sidebar-profile-container" ref={sidebarProfileRef}>
+          <button
+            className={`sidebar-profile-card-btn ${sidebarProfileOpen ? 'active' : ''}`}
+            onClick={() => setSidebarProfileOpen((prev) => !prev)}
+            title="User Profile & Station Controls"
+            type="button"
+          >
+            <div className="avatar sidebar-avatar">{getInitials(user?.fullName)}</div>
+            <div className="sidebar-profile-details">
+              <strong className="sidebar-profile-name">{user?.fullName || 'Chief Commander Admin'}</strong>
+              <small className="sidebar-profile-role">{user?.role === 'ADMIN' ? 'HQ Supreme Admin' : user?.role?.replace('_', ' ') || 'HQ Supreme Admin'}</small>
+            </div>
+            <ChevronDown size={14} className={`profile-chevron ${sidebarProfileOpen ? 'open' : ''}`} />
+          </button>
+
+          {/* Floating Sidebar Profile Popover */}
+          {sidebarProfileOpen && (
+            <div className="sidebar-profile-popover">
+              <div className="dropdown-user-header">
+                <div className="dropdown-avatar-large">{getInitials(user?.fullName)}</div>
+                <div className="dropdown-user-details">
+                  <h4 className="dropdown-user-name">{user?.fullName || 'Chief Commander Admin'}</h4>
+                  <span className="dropdown-role-badge">
+                    {user?.role === 'ADMIN' ? 'HQ Supreme Admin' : user?.role?.replace('_', ' ') || 'HQ Supreme Admin'}
+                  </span>
+                  <div className="dropdown-meta-rows">
+                    <div className="dropdown-meta-item">
+                      <span>Clearance:</span> <strong>{userRole === 'ADMIN' ? 'ADMIN' : userRole || 'LEVEL-4'}</strong>
+                    </div>
+                    <div className="dropdown-meta-item">
+                      <span>Security:</span> <strong>TLS 1.3 / AES-256</strong>
+                    </div>
+                    {user?.baseId && (
+                      <div className="dropdown-meta-item">
+                        <span>Base Station:</span> <strong>{bases.find((b) => b.id === user.baseId)?.name || 'HQ Base'}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="dropdown-divider" />
+
+              <div className="dropdown-section">
+                <button
+                  className="dropdown-item"
+                  onClick={() => toggleTheme()}
+                  type="button"
+                >
+                  <div className="dropdown-item-left">
+                    {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+                    <span>{theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}</span>
+                  </div>
+                  <span className="dropdown-theme-pill">{theme === 'light' ? 'Light' : 'Dark'}</span>
+                </button>
+              </div>
+
+              <div className="dropdown-divider" />
+
+              <div className="dropdown-section">
+                <button
+                  className="dropdown-item dropdown-logout-btn"
+                  onClick={() => {
+                    setSidebarProfileOpen(false);
+                    logout();
+                  }}
+                  type="button"
+                >
+                  <div className="dropdown-item-left">
+                    <LogOut size={15} />
+                    <span>Sign Out / Lock Terminal</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -237,28 +547,127 @@ export const DashboardLayout = () => {
       <main className="main">
         {/* Topbar */}
         <header className="topbar">
-          <div className="topbar-status-tag" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
-            <small style={{ color: 'var(--muted)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              DEFENSE LOGISTICS NETWORK • LIVE OPERATIONAL
-            </small>
-          </div>
-          <div className="profile">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            {/* Desktop / Tablet Sidebar Toggle Button */}
             <button
-              onClick={() => { setShowActionModal(true); setActionTab('purchase'); }}
+              className="desktop-sidebar-toggle-btn"
+              onClick={() => setDesktopSidebarOpen((prev) => !prev)}
+              aria-label={desktopSidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+              title={desktopSidebarOpen ? 'Hide Sidebar (Collapse)' : 'Show Sidebar (Expand)'}
+            >
+              {desktopSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+            </button>
+
+            {/* Hamburger menu button for mobile navigation */}
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setMobileNavOpen((prev) => !prev)}
+              aria-label="Toggle Navigation Drawer"
+              title="Open Navigation Menu"
+            >
+              {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+
+            <div className="topbar-status-tag" style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+              <span className="status-live-dot" style={{ flexShrink: 0 }}></span>
+              <small className="topbar-status-text" style={{ color: 'var(--muted)', fontSize: '11px', fontWeight: 400, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                DEFENSE LOGISTICS NETWORK • LIVE OPERATIONAL
+              </small>
+            </div>
+          </div>
+
+          <div className="profile-container" ref={profileMenuRef}>
+            <button
+              onClick={() => {
+                const defaultTab = user?.role === 'BASE_COMMANDER' ? 'assign' : 'purchase';
+                setShowActionModal(true);
+                setActionTab(defaultTab);
+                if (user?.baseId) {
+                  setFormData((prev) => ({ ...prev, baseId: user.baseId, fromBaseId: user.baseId }));
+                }
+              }}
               className="action-trigger-btn"
               title="Record Procurement, Transfer, or Issue"
             >
-              + Record Movement
+              <Plus size={13} /> <span className="btn-text">Record Movement</span>
             </button>
-            <div className="avatar">CC</div>
-            <div>
-              <strong>{user?.fullName || 'Chief Commander'}</strong>
-              <small>{user?.role === 'ADMIN' ? 'HQ Supreme Admin' : user?.role || 'HQ Supreme Admin'}</small>
-            </div>
-            <button onClick={logout} title="Logout" className="logout-action-btn">
-              <LogOut className="w-3.5 h-3.5 inline" />
+
+            {/* Topbar Profile Trigger Button - Compact 'CA' Avatar */}
+            <button
+              className={`topbar-avatar-btn ${profileMenuOpen ? 'active' : ''}`}
+              onClick={() => setProfileMenuOpen((prev) => !prev)}
+              aria-expanded={profileMenuOpen}
+              aria-label="User Profile and Defense Controls"
+              title="View Profile (Chief Commander Admin)"
+              type="button"
+            >
+              <div className="avatar">{getInitials(user?.fullName)}</div>
+              <ChevronDown size={13} className={`profile-chevron ${profileMenuOpen ? 'open' : ''}`} />
             </button>
+
+            {/* Floating Profile Dropdown Menu */}
+            {profileMenuOpen && (
+              <div className="profile-dropdown-menu">
+                <div className="dropdown-user-header">
+                  <div className="dropdown-avatar-large">
+                    {getInitials(user?.fullName)}
+                  </div>
+                  <div className="dropdown-user-details">
+                    <h4 className="dropdown-user-name">{user?.fullName || 'Chief Commander Admin'}</h4>
+                    <span className="dropdown-role-badge">
+                      {user?.role === 'ADMIN' ? 'HQ Supreme Admin' : user?.role?.replace('_', ' ') || 'HQ Supreme Admin'}
+                    </span>
+                    <div className="dropdown-meta-rows">
+                      <div className="dropdown-meta-item">
+                        <span>Clearance:</span> <strong>{userRole === 'ADMIN' ? 'ADMIN' : userRole || 'LEVEL-4'}</strong>
+                      </div>
+                      <div className="dropdown-meta-item">
+                        <span>Security:</span> <strong>TLS 1.3 / AES-256</strong>
+                      </div>
+                      {user?.baseId && (
+                        <div className="dropdown-meta-item">
+                          <span>Base Station:</span> <strong>{bases.find((b) => b.id === user.baseId)?.name || 'HQ Base'}</strong>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dropdown-divider" />
+
+                <div className="dropdown-section">
+                  <button
+                    className="dropdown-item"
+                    onClick={() => toggleTheme()}
+                    type="button"
+                  >
+                    <div className="dropdown-item-left">
+                      {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+                      <span>{theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}</span>
+                    </div>
+                    <span className="dropdown-theme-pill">{theme === 'light' ? 'Light' : 'Dark'}</span>
+                  </button>
+                </div>
+
+                <div className="dropdown-divider" />
+
+                <div className="dropdown-section">
+                  <button
+                    className="dropdown-item dropdown-logout-btn"
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      logout();
+                    }}
+                    type="button"
+                  >
+                    <div className="dropdown-item-left">
+                      <LogOut size={15} />
+                      <span>Sign Out / Lock Terminal</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -279,36 +688,46 @@ export const DashboardLayout = () => {
 
             {/* Modal Tabs */}
             <div className="modal-tabs">
-              <button
-                className={`tab-btn ${actionTab === 'purchase' ? 'active' : ''}`}
-                onClick={() => setActionTab('purchase')}
-              >
-                🛒 Purchase
-              </button>
-              <button
-                className={`tab-btn ${actionTab === 'transfer' ? 'active' : ''}`}
-                onClick={() => setActionTab('transfer')}
-              >
-                🔄 Transfer
-              </button>
-              <button
-                className={`tab-btn ${actionTab === 'assign' ? 'active' : ''}`}
-                onClick={() => setActionTab('assign')}
-              >
-                👤 Issue / Assign
-              </button>
-              <button
-                className={`tab-btn ${actionTab === 'return' ? 'active' : ''}`}
-                onClick={() => setActionTab('return')}
-              >
-                ↩️ Return
-              </button>
-              <button
-                className={`tab-btn ${actionTab === 'expend' ? 'active' : ''}`}
-                onClick={() => setActionTab('expend')}
-              >
-                🔥 Expend
-              </button>
+              {(user?.role === 'ADMIN' || user?.role === 'LOGISTICS_OFFICER') && (
+                <button
+                  className={`tab-btn ${actionTab === 'purchase' ? 'active' : ''}`}
+                  onClick={() => setActionTab('purchase')}
+                >
+                  🛒 Purchase
+                </button>
+              )}
+              {(user?.role === 'ADMIN' || user?.role === 'LOGISTICS_OFFICER') && (
+                <button
+                  className={`tab-btn ${actionTab === 'transfer' ? 'active' : ''}`}
+                  onClick={() => setActionTab('transfer')}
+                >
+                  🔄 Transfer
+                </button>
+              )}
+              {(user?.role === 'ADMIN' || user?.role === 'BASE_COMMANDER') && (
+                <button
+                  className={`tab-btn ${actionTab === 'assign' ? 'active' : ''}`}
+                  onClick={() => setActionTab('assign')}
+                >
+                  👤 Issue / Assign
+                </button>
+              )}
+              {(user?.role === 'ADMIN' || user?.role === 'BASE_COMMANDER') && (
+                <button
+                  className={`tab-btn ${actionTab === 'return' ? 'active' : ''}`}
+                  onClick={() => setActionTab('return')}
+                >
+                  ↩️ Return
+                </button>
+              )}
+              {(user?.role === 'ADMIN' || user?.role === 'BASE_COMMANDER') && (
+                <button
+                  className={`tab-btn ${actionTab === 'expend' ? 'active' : ''}`}
+                  onClick={() => setActionTab('expend')}
+                >
+                  🔥 Expend
+                </button>
+              )}
             </div>
 
             {/* Notification Banner */}

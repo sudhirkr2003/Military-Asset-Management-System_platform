@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import {
   FileText,
@@ -31,21 +31,22 @@ export const ReportsPage = () => {
   const [expenditureReports, setExpenditureReports] = useState([]);
   const [inventoryReports, setInventoryReports] = useState([]);
 
-  useEffect(() => {
-    const fetchBases = async () => {
-      try {
-        const res = await api.get('/bases');
-        if (res.data?.data) {
-          setBases(res.data.data);
-        }
-      } catch (err) {
-        console.error('Error loading bases for reports', err);
+  const fetchBases = useCallback(async () => {
+    try {
+      const res = await api.get('/bases');
+      if (res.data?.data) {
+        setBases(res.data.data);
       }
-    };
-    fetchBases();
+    } catch (err) {
+      console.error('Error loading bases for reports', err);
+    }
   }, []);
 
-  const fetchReportData = async () => {
+  useEffect(() => {
+    fetchBases();
+  }, [fetchBases]);
+
+  const fetchReportData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'movements') {
@@ -83,11 +84,11 @@ export const ReportsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, selectedBase, selectedType, startDate, endDate]);
 
   useEffect(() => {
     fetchReportData();
-  }, [activeTab, selectedBase, selectedType, startDate, endDate]);
+  }, [fetchReportData]);
 
   const handleExportCsv = async () => {
     try {
@@ -147,11 +148,11 @@ export const ReportsPage = () => {
           </small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={handlePrint}>
-            <Printer className="w-3.5 h-3.5 inline mr-1" /> Print / Save PDF
+          <button className="btn-secondary" onClick={handlePrint} title="Print or Save PDF">
+            <Printer className="w-3.5 h-3.5 inline mr-1" /> <span className="btn-text">Print / Save PDF</span>
           </button>
-          <button className="btn-primary" onClick={handleExportCsv}>
-            <Download className="w-3.5 h-3.5 inline mr-1" /> Export CSV File
+          <button className="btn-primary" onClick={handleExportCsv} title="Export CSV File">
+            <Download className="w-3.5 h-3.5 inline mr-1" /> <span className="btn-text">Export CSV File</span>
           </button>
         </div>
       </div>
@@ -367,7 +368,16 @@ export const ReportsPage = () => {
                     <td>
                       <strong style={{ fontFamily: 'monospace', color: 'var(--blue)' }}>#{m.id}</strong>
                     </td>
-                    <td>{m.timestamp ? new Date(m.timestamp).toLocaleString() : 'N/A'}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text)', whiteSpace: 'nowrap' }}>
+                          {m.timestamp ? new Date(m.timestamp).toLocaleDateString() : 'Today'}
+                        </span>
+                        <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                          {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                    </td>
                     <td>
                       <strong>{m.baseName}</strong>
                     </td>
@@ -438,13 +448,22 @@ export const ReportsPage = () => {
                     <td>
                       <strong style={{ fontFamily: 'monospace', color: 'var(--yellow)' }}>#EXP-{e.id}</strong>
                     </td>
-                    <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : 'N/A'}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text)', whiteSpace: 'nowrap' }}>
+                          {e.timestamp ? new Date(e.timestamp).toLocaleDateString() : 'Today'}
+                        </span>
+                        <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                          {e.timestamp ? new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                    </td>
                     <td>
                       <strong>{e.baseName}</strong>
                     </td>
                     <td>{e.equipmentName}</td>
                     <td>{e.equipmentCategory || 'AMMUNITION'}</td>
-                    <td style={{ color: 'var(--red)', fontWeight: 700 }}>-{formatNumber(e.quantity)}</td>
+                    <td style={{ color: 'var(--red)', fontWeight: 400 }}>-{formatNumber(e.quantity)}</td>
                     <td style={{ color: 'var(--muted)', fontSize: '11px' }}>{e.remarks || 'Combat / Training Mission'}</td>
                     <td>{e.createdBy || 'ADMIN'}</td>
                   </tr>
@@ -493,10 +512,10 @@ export const ReportsPage = () => {
                     <td>{inv.equipmentName}</td>
                     <td>{inv.equipmentCategory || 'EQUIPMENT'}</td>
                     <td>{formatNumber(inv.openingBalance)}</td>
-                    <td style={{ color: 'var(--green)', fontWeight: 700 }}>
+                    <td style={{ color: 'var(--green)', fontWeight: 400 }}>
                       {formatNumber(inv.availableQuantity)}
                     </td>
-                    <td style={{ color: 'var(--yellow)', fontWeight: 700 }}>
+                    <td style={{ color: 'var(--yellow)', fontWeight: 400 }}>
                       {formatNumber(inv.assignedQuantity)}
                     </td>
                     <td style={{ color: 'var(--red)' }}>{formatNumber(inv.expendedQuantity)}</td>

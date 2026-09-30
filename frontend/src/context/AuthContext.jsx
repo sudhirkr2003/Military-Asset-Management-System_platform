@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -14,6 +14,13 @@ export const AuthProvider = ({ children }) => {
   });
   const [token, setToken] = useState(() => localStorage.getItem('mams_token') || null);
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('mams_token');
+    localStorage.removeItem('mams_user');
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -33,9 +40,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
-  }, []);
+  }, [logout]);
 
-  const login = async (usernameOrEmail, password) => {
+  const login = useCallback(async (usernameOrEmail, password) => {
     const res = await api.post('/auth/login', { usernameOrEmail, password });
     if (res.data?.data) {
       const { accessToken, user: userData } = res.data.data;
@@ -46,24 +53,20 @@ export const AuthProvider = ({ children }) => {
       return userData;
     }
     throw new Error('Invalid response structure from server');
-  };
+  }, []);
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('mams_token');
-    localStorage.removeItem('mams_user');
-  };
-
-  const value = {
-    user,
-    token,
-    role: user?.role || null,
-    isAuthenticated: !!token && !!user,
-    loading,
-    login,
-    logout,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      role: user?.role || null,
+      isAuthenticated: !!token && !!user,
+      loading,
+      login,
+      logout,
+    }),
+    [user, token, loading, login, logout]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

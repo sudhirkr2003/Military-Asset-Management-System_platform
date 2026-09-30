@@ -24,22 +24,26 @@ public class ReportServiceImpl implements ReportService {
     private final MovementLedgerRepository movementLedgerRepository;
     private final InventoryRepository inventoryRepository;
     private final BaseRepository baseRepository;
+    private final com.mams.security.SecurityUtils securityUtils;
 
     public ReportServiceImpl(MovementLedgerRepository movementLedgerRepository,
                              InventoryRepository inventoryRepository,
-                             BaseRepository baseRepository) {
+                             BaseRepository baseRepository,
+                             com.mams.security.SecurityUtils securityUtils) {
         this.movementLedgerRepository = movementLedgerRepository;
         this.inventoryRepository = inventoryRepository;
         this.baseRepository = baseRepository;
+        this.securityUtils = securityUtils;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MovementLedgerDto> getMovementAuditReport(Long baseId, MovementType movementType, LocalDateTime startDate, LocalDateTime endDate) {
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
         List<MovementLedger> movements = movementLedgerRepository.findAll();
 
         return movements.stream()
-                .filter(m -> baseId == null || (m.getBase() != null && m.getBase().getId().equals(baseId)))
+                .filter(m -> effectiveBaseId == null || (m.getBase() != null && m.getBase().getId().equals(effectiveBaseId)))
                 .filter(m -> movementType == null || m.getMovementType() == movementType)
                 .filter(m -> startDate == null || (m.getTimestamp() != null && !m.getTimestamp().isBefore(startDate)))
                 .filter(m -> endDate == null || (m.getTimestamp() != null && !m.getTimestamp().isAfter(endDate)))
@@ -60,10 +64,11 @@ public class ReportServiceImpl implements ReportService {
     @Override
     @Transactional(readOnly = true)
     public List<InventoryDto> getInventoryAuditReport(Long baseId) {
+        Long effectiveBaseId = securityUtils.validateAndGetEffectiveBaseId(baseId);
         List<Inventory> inventories = inventoryRepository.findAll();
 
         return inventories.stream()
-                .filter(i -> baseId == null || (i.getBase() != null && i.getBase().getId().equals(baseId)))
+                .filter(i -> effectiveBaseId == null || (i.getBase() != null && i.getBase().getId().equals(effectiveBaseId)))
                 .map(this::mapToInventoryDto)
                 .collect(Collectors.toList());
     }

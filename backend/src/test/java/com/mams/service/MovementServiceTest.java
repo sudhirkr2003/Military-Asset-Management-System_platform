@@ -45,6 +45,9 @@ public class MovementServiceTest {
     @Mock
     private EquipmentTypeRepository equipmentTypeRepository;
 
+    @Mock
+    private com.mams.security.SecurityUtils securityUtils;
+
     @InjectMocks
     private MovementServiceImpl movementService;
 

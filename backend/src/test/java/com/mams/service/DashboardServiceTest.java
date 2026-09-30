@@ -28,18 +28,23 @@ public class DashboardServiceTest {
     @Mock
     private MovementLedgerRepository movementLedgerRepository;
 
+    @Mock
+    private com.mams.security.SecurityUtils securityUtils;
+
     @InjectMocks
     private DashboardServiceImpl dashboardService;
 
     @Test
     @DisplayName("Should accurately calculate Opening, Net Movement (Purchases + Transfer In - Transfer Out), and Closing Balance")
     void testGetSummary_AccurateMathematicalCalculations() {
+        when(securityUtils.validateAndGetEffectiveBaseId(any())).thenReturn(null);
+
         // Mock inventory counts
-        when(inventoryRepository.sumOpeningBalance(null, null)).thenReturn(1000L);
-        when(inventoryRepository.sumAvailableQuantity(null, null)).thenReturn(900L);
-        when(inventoryRepository.sumAssignedQuantity(null, null)).thenReturn(250L);
-        when(inventoryRepository.sumExpendedQuantity(null, null)).thenReturn(50L);
-        when(inventoryRepository.sumClosingBalance(null, null)).thenReturn(1200L);
+        when(inventoryRepository.sumOpeningBalance(any(), any())).thenReturn(1000L);
+        when(inventoryRepository.sumAvailableQuantity(any(), any())).thenReturn(900L);
+        when(inventoryRepository.sumAssignedQuantity(any(), any())).thenReturn(250L);
+        when(inventoryRepository.sumExpendedQuantity(any(), any())).thenReturn(50L);
+        when(inventoryRepository.sumClosingBalance(any(), any())).thenReturn(1200L);
 
         // Mock movement counts
         when(movementLedgerRepository.sumQuantityByMovementTypeAndFilters(

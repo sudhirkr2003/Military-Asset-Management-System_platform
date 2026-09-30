@@ -17,10 +17,13 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/reports")
 @Tag(name = "Reports & Audit", description = "Endpoints for generating logistical audit reports, expenditure metrics, and CSV/PDF data exports")
 @SecurityRequirement(name = "BearerAuth")
+@PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER', 'LOGISTICS_OFFICER')")
 public class ReportController {
 
     private final ReportService reportService;

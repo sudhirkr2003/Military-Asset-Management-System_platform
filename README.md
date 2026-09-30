@@ -17,11 +17,12 @@
 3. [Technology Stack](#-technology-stack)
 4. [Logistics & Balance Reconciliation Logic](#-logistics--balance-reconciliation-logic)
 5. [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
-6. [Audit Trail & Accountability Standards](#-audit-trail--accountability-standards)
-7. [API Directory (27 Endpoints)](#-api-directory-27-endpoints)
-8. [Project Structure](#-project-structure)
-9. [Installation & Setup](#-installation--setup)
-10. [Automated Test Suite](#-automated-test-suite)
+6. [UI & UX Highlights](#-ui--ux-highlights)
+7. [Audit Trail & Accountability Standards](#-audit-trail--accountability-standards)
+8. [API Directory (27 Endpoints)](#-api-directory-27-endpoints)
+9. [Project Structure](#-project-structure)
+10. [Installation & Setup](#-installation--setup)
+11. [Automated Test Suite](#-automated-test-suite)
 
 ---
 
@@ -32,7 +33,7 @@ The **Military Asset Management System (MAMS)** is an enterprise defense logisti
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                      FRONTEND CLIENT (REACT 18)                        │
-│            Vite • Modular Glassmorphic Defense Dashboard               │
+│     Vite • Dual Theme (Dark/Light) • Fixed Layout • RBAC Dashboards    │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ HTTPS / REST (JWT Bearer)
                                     ▼
@@ -71,6 +72,7 @@ The **Military Asset Management System (MAMS)** is an enterprise defense logisti
 | **Security Architecture** | **Spring Security 6 + Stateless JWT** | Token-based authentication with method-level authorization (`@PreAuthorize`). |
 | **Data Persistence** | **Spring Data JPA / Hibernate 6** | Declarative data access layer with strict relational consistency. |
 | **Frontend Platform** | **React 18 + Vite** | Modular, fast component architecture with responsive glassmorphic UI. |
+| **Styling & Design** | **Pure CSS + CSS Theme Variables** | High-contrast Light and Dark mode tokens, fixed sticky header & sidebar. |
 | **API Specification** | **OpenAPI 3.0 / Swagger** | Interactive contract specification with real-time payload testing. |
 
 ---
@@ -95,8 +97,8 @@ $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Per
 | :--- | :---: | :---: | :---: | :---: |
 | **Authentication & Profile** | ✅ Full Access | ✅ Full Access | ✅ Full Access | ✅ Login Only |
 | **Dashboard KPI Metrics** | ✅ All Bases | ✅ Sector View | ✅ Base Assigned | ❌ Restricted |
-| **Procurement / Purchases** | ✅ Full Access | ✅ Full Access | ❌ Forbidden | ❌ Restricted |
-| **Inter-Base Transfers** | ✅ Full Access | ✅ Full Access | ❌ Forbidden | ❌ Restricted |
+| **Procurement / Purchases** | ✅ Full Access | ✅ Full Access | ✅ Base Purchases | ❌ Restricted |
+| **Inter-Base Transfers** | ✅ Full Access | ✅ Full Access | ✅ Base Transfers | ❌ Restricted |
 | **Personnel Assignments & Returns** | ✅ Full Access | ❌ Forbidden | ✅ Base Troops | ❌ Restricted |
 | **Ammunition Expenditure** | ✅ Full Access | ❌ Forbidden | ✅ Base Operations | ❌ Restricted |
 | **Asset Catalog Management** | ✅ Create / Edit / Decommission | ✅ Create / Edit | ✅ Read-Only | ❌ Restricted |
@@ -104,6 +106,18 @@ $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Per
 | **Personnel Administration** | ✅ Full Access | ❌ Forbidden | ❌ Forbidden | ❌ Restricted |
 | **Audit Reports & Exports** | ✅ Full Audit Logs | ✅ Logistics Logs | ✅ Command Logs | ❌ Restricted |
 | **API Documentation Hub** | ✅ In-App Test Runner | ✅ In-App Test Runner | ✅ In-App Test Runner | ✅ Read-Only Specs |
+
+---
+
+## 🎨 UI & UX Highlights
+
+- **Dual-Theme Engine (Light / Dark Mode):** Instant switching between high-contrast Military Slate Dark theme and Crisp Tactical Light theme.
+- **Fixed Non-Scrolling Header & Sidebar:** Pinned navigation header and fixed left sidebar with independent scrollable main content viewport.
+- **Collapsible Sidebar (Desktop & Tablet):** Desktop toggle button to expand/collapse sidebar navigation for maximized dashboard data visualization.
+- **Independent Profile Controls:**
+  - **Topbar Avatar (`CA`):** Compact header avatar triggering profile details, clearance level, theme switcher, and logout.
+  - **Sidebar Profile Card:** Standalone bottom profile card with quick user metadata and station credentials.
+- **Standardized Typography System:** Strict typographic hierarchy using font weights 700 (headers), 500 (subheaders), and 400 (body/labels).
 
 ---
 
@@ -135,8 +149,8 @@ $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Per
 - `DELETE /api/equipment/{id}` — Decommission an equipment type *(Admin only)*
 
 ### 4. Movements & Logistics (`/api/movements`)
-- `POST /api/movements/purchase` — Record asset procurement *(Admin, Logistics)*
-- `POST /api/movements/transfer` — Transfer assets between bases *(Admin, Logistics)*
+- `POST /api/movements/purchase` — Record asset procurement *(Admin, Logistics, Commander)*
+- `POST /api/movements/transfer` — Transfer assets between bases *(Admin, Logistics, Commander)*
 - `POST /api/movements/assign` — Assign weapons/gear to personnel *(Admin, Commander)*
 - `POST /api/movements/return` — Record return of assigned assets to armory *(Admin, Commander)*
 - `POST /api/movements/expend` — Record munitions expenditure *(Admin, Commander)*
@@ -186,9 +200,10 @@ Military Asset Management System/
 └── frontend/                               # React 18 / Vite Application
     └── src/
         ├── components/                     # Layout, ProtectedRoute, Navigation
-        ├── context/                        # Authentication State Management
+        ├── context/                        # Auth & Theme State Management
         ├── pages/                          # Application Views & Dashboards
         ├── services/                       # API Client & Request Interceptors
+        ├── typography.css                  # Standardized Font Weight Tokens
         └── App.css                         # Tactical Defense Design System
 ```
 
@@ -214,10 +229,10 @@ mvn spring-boot:run
 ```powershell
 cd frontend
 npm install
-npm run dev -- --port 5174
+npm run dev -- --port 5173
 ```
-* Web Application: `http://localhost:5174`
-* Public Architecture Specs: `http://localhost:5174/public-docs`
+* Web Application: `http://localhost:5173`
+* Public Architecture Specs: `http://localhost:5173/public-docs`
 
 ---
 

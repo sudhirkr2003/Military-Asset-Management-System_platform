@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +31,7 @@ public class MovementController {
     }
 
     @PostMapping("/purchase")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS_OFFICER')")
     @Operation(summary = "Record new procurement / purchase of assets into base inventory")
     public ResponseEntity<ApiResponse<MovementLedgerDto>> recordPurchase(
             @Valid @RequestBody PurchaseRequest request,
@@ -41,6 +43,7 @@ public class MovementController {
     }
 
     @PostMapping("/transfer")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS_OFFICER')")
     @Operation(summary = "Transfer military assets from one base to another")
     public ResponseEntity<ApiResponse<MovementLedgerDto>> recordTransfer(
             @Valid @RequestBody TransferRequest request,
@@ -52,6 +55,7 @@ public class MovementController {
     }
 
     @PostMapping("/assign")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER')")
     @Operation(summary = "Assign / Issue weapons or equipment to military personnel")
     public ResponseEntity<ApiResponse<MovementLedgerDto>> recordAssignment(
             @Valid @RequestBody AssignmentRequest request,
@@ -63,6 +67,7 @@ public class MovementController {
     }
 
     @PostMapping("/return")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER')")
     @Operation(summary = "Record return of assigned equipment back to base armory")
     public ResponseEntity<ApiResponse<MovementLedgerDto>> recordReturn(
             @Valid @RequestBody ReturnAssignmentRequest request,
@@ -73,6 +78,7 @@ public class MovementController {
     }
 
     @PostMapping("/expend")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER')")
     @Operation(summary = "Record expenditure / consumption of ammunition or fuel during operations")
     public ResponseEntity<ApiResponse<MovementLedgerDto>> recordExpenditure(
             @Valid @RequestBody ExpenditureRequest request,
@@ -84,6 +90,7 @@ public class MovementController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER', 'LOGISTICS_OFFICER')")
     @Operation(summary = "Get transaction ledger history with optional filters")
     public ResponseEntity<ApiResponse<List<MovementLedgerDto>>> getMovements(
             @RequestParam(required = false) Long baseId,
@@ -95,6 +102,7 @@ public class MovementController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER', 'LOGISTICS_OFFICER')")
     @Operation(summary = "Get specific movement transaction details by ID")
     public ResponseEntity<ApiResponse<MovementLedgerDto>> getMovementById(@PathVariable Long id) {
         MovementLedgerDto movement = movementService.getMovementById(id);

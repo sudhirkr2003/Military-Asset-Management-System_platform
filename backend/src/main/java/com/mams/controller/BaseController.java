@@ -28,6 +28,7 @@ public class BaseController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER', 'LOGISTICS_OFFICER')")
     @Operation(summary = "Get list of all military bases")
     public ResponseEntity<ApiResponse<List<BaseDto>>> getAllBases() {
         List<BaseDto> bases = baseService.getAllBases();
@@ -35,6 +36,7 @@ public class BaseController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER', 'LOGISTICS_OFFICER')")
     @Operation(summary = "Get military base details by ID")
     public ResponseEntity<ApiResponse<BaseDto>> getBaseById(@PathVariable Long id) {
         BaseDto base = baseService.getBaseById(id);

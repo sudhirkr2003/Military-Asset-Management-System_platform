@@ -11,10 +11,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/inventory")
 @Tag(name = "Inventory", description = "Endpoints for viewing live stock balances across military bases")
 @SecurityRequirement(name = "BearerAuth")
+@PreAuthorize("hasAnyRole('ADMIN', 'BASE_COMMANDER', 'LOGISTICS_OFFICER')")
 public class InventoryController {
 
     private final InventoryService inventoryService;

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   UserCheck,
@@ -18,6 +19,9 @@ import {
 } from 'lucide-react';
 
 export const AssignmentsPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [movements, setMovements] = useState([]);
   const [bases, setBases] = useState([]);
   const [equipmentTypes, setEquipmentTypes] = useState([]);
@@ -28,7 +32,13 @@ export const AssignmentsPage = () => {
   const [notification, setNotification] = useState({ type: '', message: '' });
 
   // Filter & tab
-  const [activeFilterTab, setActiveFilterTab] = useState('ALL'); // 'ALL', 'ASSIGNMENTS', 'EXPENDITURES', 'RETURNS'
+  const [activeFilterTab, setActiveFilterTab] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    if (path.endsWith('/return') || path === '/movements/return') return 'RETURNS';
+    if (path.endsWith('/expend') || path === '/movements/expend') return 'EXPENDITURES';
+    if (path.endsWith('/assign') || path === '/movements/assign') return 'ASSIGNMENTS';
+    return 'ALL';
+  });
   const [selectedBase, setSelectedBase] = useState('ALL');
   const [selectedEquipment, setSelectedEquipment] = useState('ALL');
   const [startDate, setStartDate] = useState('');
@@ -47,7 +57,7 @@ export const AssignmentsPage = () => {
     remarks: ''
   });
 
-  const fetchLookups = async () => {
+  const fetchLookups = useCallback(async () => {
     try {
       const [basesRes, equipRes] = await Promise.all([
         api.get('/bases').catch(() => ({ data: { data: [] } })),
@@ -58,14 +68,13 @@ export const AssignmentsPage = () => {
     } catch (err) {
       console.error('Error fetching lookups', err);
     }
-  };
+  }, []);
 
-  const fetchMovements = async () => {
+  const fetchMovements = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/movements');
       if (res.data?.data) {
-        // Filter out PURCHASE and TRANSFER, only show ASSIGNMENT, RETURN, EXPENDITURE
         const relevant = res.data.data.filter((m) =>
           ['ASSIGNMENT', 'RETURN', 'EXPENDITURE'].includes(m.movementType)
         );
@@ -76,7 +85,7 @@ export const AssignmentsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLookups();
@@ -85,128 +94,191 @@ export const AssignmentsPage = () => {
     const handleUpdate = () => fetchMovements();
     window.addEventListener('mams:movement_updated', handleUpdate);
     return () => window.removeEventListener('mams:movement_updated', handleUpdate);
-  }, []);
+  }, [fetchLookups, fetchMovements]);
 
-  const handleInputChange = (e) => {
+  // Sync state with location.pathname
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+    if (path.endsWith('/return') || path === '/movements/return') {
+      setActiveFilterTab('RETURNS');
+      setActionTab('RETURN');
+    } else if (path.endsWith('/expend') || path === '/movements/expend') {
+      setActiveFilterTab('EXPENDITURES');
+      setActionTab('EXPEND');
+    } else if (path.endsWith('/assign') || path === '/movements/assign') {
+      setActiveFilterTab('ASSIGNMENTS');
+      setActionTab('ASSIGN');
+    } else {
+      setActiveFilterTab('ALL');
+      setActionTab('ASSIGN');
+    }
+  }, [location.pathname]);
+
+  const handleFilterTabSelect = useCallback(
+    (tab, routePath, actionDefault) => {
+      setActiveFilterTab(tab);
+      if (actionDefault) setActionTab(actionDefault);
+      if (routePath && location.pathname !== routePath) {
+        navigate(routePath);
+      }
+    },
+    [location.pathname, navigate]
+  );
+
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
   const handleSubmitAction = async (e) => {
     e.preventDefault();
-    setFormLoading(true);
     setNotification({ type: '', message: '' });
 
+    const selectedBaseObj = bases.find((b) => Number(b.id) === Number(formData.baseId));
+    const selectedEqObj = equipmentTypes.find((eq) => Number(eq.id) === Number(formData.equipmentTypeId));
+
+    let movementType = 'ASSIGNMENT';
+    let endpoint = '/movements/assign';
+    let detailsText = formData.personnelName ? `Issued to ${formData.personnelName} (${formData.serviceNumber || 'N/A'})` : 'Field deployment';
+
+    if (actionTab === 'EXPEND') {
+      movementType = 'EXPENDITURE';
+      endpoint = '/movements/expend';
+      detailsText = formData.operationOrExercise ? `Expended in ${formData.operationOrExercise}` : 'Combat / Exercise consumption';
+    } else if (actionTab === 'RETURN') {
+      movementType = 'RETURN';
+      endpoint = '/movements/return';
+      detailsText = `Returned to base armory by ${formData.serviceNumber || 'Personnel'}`;
+    }
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMovement = {
+      id: tempId,
+      timestamp: new Date().toISOString(),
+      baseId: Number(formData.baseId),
+      baseName: selectedBaseObj?.name || 'Base #' + formData.baseId,
+      equipmentTypeId: Number(formData.equipmentTypeId),
+      equipmentName: selectedEqObj?.name || 'Equipment #' + formData.equipmentTypeId,
+      equipmentCategory: selectedEqObj?.category || 'EQUIPMENT',
+      quantity: Number(formData.quantity),
+      movementType,
+      remarks: formData.remarks || detailsText,
+      personnelName: formData.personnelName,
+      serviceNumber: formData.serviceNumber,
+      isOptimistic: true
+    };
+
+    // 1. Optimistically add to movements list immediately
+    setMovements((prev) => [optimisticMovement, ...prev]);
+
+    // 2. Clear form and notify user instantly
+    setNotification({
+      type: 'success',
+      message: `${movementType} transaction dispatched! Armory updating...`
+    });
+
+    const payload = {
+      baseId: Number(formData.baseId),
+      equipmentTypeId: Number(formData.equipmentTypeId),
+      quantity: Number(formData.quantity),
+      personnelName: formData.personnelName,
+      serviceNumber: formData.serviceNumber,
+      purpose: formData.purpose,
+      operationOrExercise: formData.operationOrExercise,
+      remarks: formData.remarks
+    };
+
+    setFormData({
+      baseId: '',
+      equipmentTypeId: '',
+      quantity: 1,
+      personnelName: '',
+      serviceNumber: '',
+      purpose: '',
+      operationOrExercise: '',
+      remarks: ''
+    });
+
+    setTimeout(() => {
+      setShowAddForm(false);
+      setNotification({ type: '', message: '' });
+    }, 1200);
+
+    // 3. Fire API request in background
     try {
-      let endpoint = '';
-      let payload = {};
-
-      if (actionTab === 'ASSIGN') {
-        endpoint = '/movements/assign';
-        payload = {
-          baseId: Number(formData.baseId),
-          equipmentTypeId: Number(formData.equipmentTypeId),
-          quantity: Number(formData.quantity),
-          personnelName: formData.personnelName,
-          serviceNumber: formData.serviceNumber,
-          purpose: formData.purpose,
-          remarks: formData.remarks
-        };
-      } else if (actionTab === 'EXPEND') {
-        endpoint = '/movements/expend';
-        payload = {
-          baseId: Number(formData.baseId),
-          equipmentTypeId: Number(formData.equipmentTypeId),
-          quantity: Number(formData.quantity),
-          operationOrExercise: formData.operationOrExercise,
-          remarks: formData.remarks
-        };
-      } else if (actionTab === 'RETURN') {
-        endpoint = '/movements/return';
-        payload = {
-          baseId: Number(formData.baseId),
-          equipmentTypeId: Number(formData.equipmentTypeId),
-          quantity: Number(formData.quantity),
-          serviceNumber: formData.serviceNumber,
-          remarks: formData.remarks
-        };
-      }
-
       const res = await api.post(endpoint, payload);
-      setNotification({
-        type: 'success',
-        message: res.data?.message || 'Transaction executed and inventory updated successfully!'
-      });
-
-      setFormData({
-        baseId: '',
-        equipmentTypeId: '',
-        quantity: 1,
-        personnelName: '',
-        serviceNumber: '',
-        purpose: '',
-        operationOrExercise: '',
-        remarks: ''
-      });
-
-      fetchMovements();
       window.dispatchEvent(new Event('mams:movement_updated'));
-
-      setTimeout(() => {
-        setShowAddForm(false);
-        setNotification({ type: '', message: '' });
-      }, 1600);
+      if (res.data?.data) {
+        setMovements((prev) =>
+          prev.map((item) => (item.id === tempId ? { ...res.data.data, baseName: selectedBaseObj?.name, equipmentName: selectedEqObj?.name } : item))
+        );
+      } else {
+        fetchMovements();
+      }
     } catch (err) {
+      // Rollback on failure
+      setMovements((prev) => prev.filter((item) => item.id !== tempId));
       const errorMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        'Transaction failed. Check stock availability at the selected base.';
+        'Transaction failed. Rollback executed.';
       setNotification({ type: 'error', message: errorMsg });
-    } finally {
-      setFormLoading(false);
+      setShowAddForm(true);
     }
   };
 
   // Filter movements
-  const filteredList = movements.filter((item) => {
-    if (activeFilterTab === 'ASSIGNMENTS' && item.movementType !== 'ASSIGNMENT') return false;
-    if (activeFilterTab === 'EXPENDITURES' && item.movementType !== 'EXPENDITURE') return false;
-    if (activeFilterTab === 'RETURNS' && item.movementType !== 'RETURN') return false;
+  const filteredList = useMemo(() => {
+    return movements.filter((item) => {
+      if (activeFilterTab === 'ASSIGNMENTS' && item.movementType !== 'ASSIGNMENT') return false;
+      if (activeFilterTab === 'EXPENDITURES' && item.movementType !== 'EXPENDITURE') return false;
+      if (activeFilterTab === 'RETURNS' && item.movementType !== 'RETURN') return false;
 
-    if (selectedBase !== 'ALL' && String(item.baseId) !== String(selectedBase)) return false;
-    if (selectedEquipment !== 'ALL' && String(item.equipmentTypeId) !== String(selectedEquipment)) return false;
+      if (selectedBase !== 'ALL' && String(item.baseId) !== String(selectedBase)) return false;
+      if (selectedEquipment !== 'ALL' && String(item.equipmentTypeId) !== String(selectedEquipment)) return false;
 
-    if (startDate) {
-      const itemDate = new Date(item.timestamp);
-      if (itemDate < new Date(startDate)) return false;
-    }
-    if (endDate) {
-      const itemDate = new Date(item.timestamp);
-      const endDateTime = new Date(endDate);
-      endDateTime.setHours(23, 59, 59, 999);
-      if (itemDate > endDateTime) return false;
-    }
+      if (startDate) {
+        const itemDate = new Date(item.timestamp);
+        if (itemDate < new Date(startDate)) return false;
+      }
+      if (endDate) {
+        const itemDate = new Date(item.timestamp);
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        if (itemDate > endDateTime) return false;
+      }
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchName = item.equipmentName?.toLowerCase().includes(q);
-      const matchBase = item.baseName?.toLowerCase().includes(q);
-      const matchRemarks = item.remarks?.toLowerCase().includes(q);
-      if (!matchName && !matchBase && !matchRemarks) return false;
-    }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchName = item.equipmentName?.toLowerCase().includes(q);
+        const matchBase = item.baseName?.toLowerCase().includes(q);
+        const matchRemarks = item.remarks?.toLowerCase().includes(q);
+        if (!matchName && !matchBase && !matchRemarks) return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [movements, activeFilterTab, selectedBase, selectedEquipment, startDate, endDate, searchQuery]);
 
-  const totalAssigned = movements
-    .filter((m) => m.movementType === 'ASSIGNMENT')
-    .reduce((a, b) => a + (Number(b.quantity) || 0), 0);
-  const totalExpended = movements
-    .filter((m) => m.movementType === 'EXPENDITURE')
-    .reduce((a, b) => a + (Number(b.quantity) || 0), 0);
-  const totalReturned = movements
-    .filter((m) => m.movementType === 'RETURN')
-    .reduce((a, b) => a + (Number(b.quantity) || 0), 0);
+  const { totalAssigned, totalExpended, totalReturned } = useMemo(() => {
+    let assigned = 0;
+    let expended = 0;
+    let returned = 0;
+    movements.forEach((m) => {
+      const q = Number(m.quantity) || 0;
+      if (m.movementType === 'ASSIGNMENT') assigned += q;
+      else if (m.movementType === 'EXPENDITURE') expended += q;
+      else if (m.movementType === 'RETURN') returned += q;
+    });
+    return { totalAssigned: assigned, totalExpended: expended, totalReturned: returned };
+  }, [movements]);
+
+  const getAddButtonLabel = () => {
+    if (showAddForm) return 'Close Form';
+    if (actionTab === 'RETURN') return '↩ Record Armory Return';
+    if (actionTab === 'EXPEND') return '🔥 Record Munitions Expended';
+    return '👤 New Personnel Assignment';
+  };
 
   return (
     <div className="view-panel-container">
@@ -219,99 +291,116 @@ export const AssignmentsPage = () => {
         <div className="view-panel-actions">
           <button
             className="action-trigger-btn"
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              setActionTab('ASSIGN');
-            }}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={() => setShowAddForm(!showAddForm)}
+            title={getAddButtonLabel()}
           >
-            <Plus size={15} /> {showAddForm ? 'Close Form' : 'New Assignment / Expenditure'}
+            <Plus size={15} /> <span className="btn-text">{getAddButtonLabel()}</span>
           </button>
-          <button className="btn-secondary" onClick={fetchMovements} disabled={loading}>
-            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> Refresh
+          <button className="btn-secondary" onClick={fetchMovements} disabled={loading} title="Refresh Assignments">
+            <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="subpage-stats-grid">
-        <div className="subpage-stat-card">
+        <div
+          className="subpage-stat-card"
+          onClick={() => handleFilterTabSelect('ASSIGNMENTS', '/movements/assign', 'ASSIGN')}
+          style={{ cursor: 'pointer' }}
+          title="Filter by Assignments (/movements/assign)"
+        >
           <div className="subpage-stat-info">
             <span className="subpage-stat-label">Assigned to Troops</span>
             <span className="subpage-stat-val" style={{ color: '#a78bfa' }}>
               {totalAssigned.toLocaleString()}
             </span>
-            <span className="subpage-stat-badge purple">👤 Active Custody</span>
+            <span className="subpage-stat-badge purple">👤 Custody</span>
           </div>
           <div className="subpage-stat-icon-wrapper purple">
-            <UserCheck size={20} />
+            <UserCheck size={15} />
           </div>
         </div>
 
-        <div className="subpage-stat-card">
+        <div
+          className="subpage-stat-card"
+          onClick={() => handleFilterTabSelect('EXPENDITURES', '/movements/expend', 'EXPEND')}
+          style={{ cursor: 'pointer' }}
+          title="Filter by Expended (/movements/expend)"
+        >
           <div className="subpage-stat-info">
             <span className="subpage-stat-label">Expended Munitions</span>
             <span className="subpage-stat-val" style={{ color: '#fbbf24' }}>
               {totalExpended.toLocaleString()}
             </span>
-            <span className="subpage-stat-badge yellow">🔥 Operations/Drills</span>
+            <span className="subpage-stat-badge yellow">🔥 Operations</span>
           </div>
           <div className="subpage-stat-icon-wrapper yellow">
-            <Flame size={20} />
+            <Flame size={15} />
           </div>
         </div>
 
-        <div className="subpage-stat-card">
+        <div
+          className="subpage-stat-card"
+          onClick={() => handleFilterTabSelect('RETURNS', '/movements/return', 'RETURN')}
+          style={{ cursor: 'pointer' }}
+          title="Filter by Returns (/movements/return)"
+        >
           <div className="subpage-stat-info">
             <span className="subpage-stat-label">Returned to Armory</span>
             <span className="subpage-stat-val" style={{ color: '#34d399' }}>
               {totalReturned.toLocaleString()}
             </span>
-            <span className="subpage-stat-badge green">↩ Returned to Base</span>
+            <span className="subpage-stat-badge green">↩ Base Return</span>
           </div>
           <div className="subpage-stat-icon-wrapper green">
-            <RotateCcw size={20} />
+            <RotateCcw size={15} />
           </div>
         </div>
 
-        <div className="subpage-stat-card">
+        <div
+          className="subpage-stat-card"
+          onClick={() => handleFilterTabSelect('ALL', '/assignments')}
+          style={{ cursor: 'pointer' }}
+          title="View All Activity (/assignments)"
+        >
           <div className="subpage-stat-info">
             <span className="subpage-stat-label">In-Field Circulation</span>
             <span className="subpage-stat-val">
               {Math.max(0, totalAssigned - totalReturned).toLocaleString()}
             </span>
-            <span className="subpage-stat-badge blue">◈ Active Deployment</span>
+            <span className="subpage-stat-badge blue">◈ Deployed</span>
           </div>
           <div className="subpage-stat-icon-wrapper blue">
-            <Shield size={20} />
+            <Shield size={15} />
           </div>
         </div>
       </div>
 
       {/* Form Card */}
       {showAddForm && (
-        <div className="view-table-card" style={{ marginBottom: '24px', border: '1px solid rgba(167, 139, 250, 0.3)', background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85))' }}>
+        <div className="view-table-card" style={{ marginBottom: '24px', border: '1px solid var(--line)', background: 'var(--panel)', padding: '20px' }}>
           {/* Action Tabs inside form */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
                 className={`tab-btn ${actionTab === 'ASSIGN' ? 'active' : ''}`}
-                onClick={() => setActionTab('ASSIGN')}
+                onClick={() => handleFilterTabSelect('ASSIGNMENTS', '/movements/assign', 'ASSIGN')}
               >
                 👤 Issue / Assign to Personnel
               </button>
               <button
                 type="button"
                 className={`tab-btn ${actionTab === 'EXPEND' ? 'active' : ''}`}
-                onClick={() => setActionTab('EXPEND')}
+                onClick={() => handleFilterTabSelect('EXPENDITURES', '/movements/expend', 'EXPEND')}
               >
                 🔥 Expend Ammunition / Fuel
               </button>
               <button
                 type="button"
                 className={`tab-btn ${actionTab === 'RETURN' ? 'active' : ''}`}
-                onClick={() => setActionTab('RETURN')}
+                onClick={() => handleFilterTabSelect('RETURNS', '/movements/return', 'RETURN')}
               >
                 ↩ Return Equipment
               </button>
@@ -495,44 +584,52 @@ export const AssignmentsPage = () => {
       <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
         <button
           className={`tab-btn ${activeFilterTab === 'ALL' ? 'active' : ''}`}
-          onClick={() => setActiveFilterTab('ALL')}
+          onClick={() => handleFilterTabSelect('ALL', '/assignments')}
         >
           All Activity ({movements.length})
         </button>
         <button
           className={`tab-btn ${activeFilterTab === 'ASSIGNMENTS' ? 'active' : ''}`}
-          onClick={() => setActiveFilterTab('ASSIGNMENTS')}
+          onClick={() => handleFilterTabSelect('ASSIGNMENTS', '/movements/assign', 'ASSIGN')}
         >
           👤 Assignments ({movements.filter((m) => m.movementType === 'ASSIGNMENT').length})
         </button>
         <button
           className={`tab-btn ${activeFilterTab === 'EXPENDITURES' ? 'active' : ''}`}
-          onClick={() => setActiveFilterTab('EXPENDITURES')}
+          onClick={() => handleFilterTabSelect('EXPENDITURES', '/movements/expend', 'EXPEND')}
         >
           🔥 Expended ({movements.filter((m) => m.movementType === 'EXPENDITURE').length})
         </button>
         <button
           className={`tab-btn ${activeFilterTab === 'RETURNS' ? 'active' : ''}`}
-          onClick={() => setActiveFilterTab('RETURNS')}
+          onClick={() => handleFilterTabSelect('RETURNS', '/movements/return', 'RETURN')}
         >
           ↩ Returns ({movements.filter((m) => m.movementType === 'RETURN').length})
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="card" style={{ padding: '14px 18px', marginBottom: '18px', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#93c5fd', fontWeight: 600, fontSize: '13px' }}>
-          <Filter size={15} /> Filters:
+      {/* Filter & Search Toolbar */}
+      <div className="filter-toolbar">
+        {/* Search */}
+        <div className="filter-search-wrap">
+          <Search size={14} className="filter-search-icon" />
+          <input
+            type="text"
+            placeholder="Search personnel, service #, notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="filter-search-input"
+          />
         </div>
 
         {/* Base Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Building size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-item-group">
+          <Building size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           <select
             value={selectedBase}
             onChange={(e) => setSelectedBase(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Base"
           >
             <option value="ALL">All Bases ({bases.length})</option>
             {bases.map((b) => (
@@ -544,13 +641,13 @@ export const AssignmentsPage = () => {
         </div>
 
         {/* Equipment Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Shield size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-item-group">
+          <Shield size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           <select
             value={selectedEquipment}
             onChange={(e) => setSelectedEquipment(e.target.value)}
-            className="modal-select"
-            style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
+            className="filter-select"
+            aria-label="Filter by Equipment Type"
           >
             <option value="ALL">All Equipment ({equipmentTypes.length})</option>
             {equipmentTypes.map((eq) => (
@@ -562,39 +659,40 @@ export const AssignmentsPage = () => {
         </div>
 
         {/* Date Range */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Calendar size={14} style={{ color: 'var(--muted)' }} />
+        <div className="filter-date-wrap">
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="modal-input"
-            style={{ width: 'auto', padding: '5px 10px', fontSize: '12px' }}
+            className="filter-date-input"
             title="Start Date"
           />
-          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>to</span>
+          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>to</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="modal-input"
-            style={{ width: 'auto', padding: '5px 10px', fontSize: '12px' }}
+            className="filter-date-input"
             title="End Date"
           />
         </div>
 
-        {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
-          <Search size={14} style={{ color: 'var(--muted)' }} />
-          <input
-            type="text"
-            placeholder="Search notes, personnel..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="modal-input"
-            style={{ width: '180px', padding: '5px 10px', fontSize: '12px' }}
-          />
-        </div>
+        {/* Reset Filter Button */}
+        {(selectedBase !== 'ALL' || selectedEquipment !== 'ALL' || startDate !== '' || endDate !== '' || searchQuery !== '') && (
+          <button
+            className="filter-reset-btn"
+            onClick={() => {
+              setSelectedBase('ALL');
+              setSelectedEquipment('ALL');
+              setStartDate('');
+              setEndDate('');
+              setSearchQuery('');
+            }}
+            title="Clear all filters"
+          >
+            ✕ Reset
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -618,14 +716,19 @@ export const AssignmentsPage = () => {
               filteredList.map((m) => (
                 <tr key={m.id}>
                   <td>
-                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 600 }}>
+                    <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontWeight: 400 }}>
                       #{m.id}
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
-                      {m.timestamp ? new Date(m.timestamp).toLocaleString() : 'N/A'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', lineHeight: 1.15 }}>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        {m.timestamp ? new Date(m.timestamp).toLocaleDateString() : 'Today'}
+                      </span>
+                      <span style={{ fontSize: '9.5px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                        {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
+                      </span>
+                    </div>
                   </td>
                   <td>
                     <strong>{m.baseName}</strong>
@@ -648,7 +751,7 @@ export const AssignmentsPage = () => {
                     )}
                   </td>
                   <td>
-                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                    <span style={{ fontWeight: 400, color: 'var(--text)' }}>
                       {m.equipmentName}
                     </span>
                   </td>
@@ -656,7 +759,7 @@ export const AssignmentsPage = () => {
                     <b className="pill pblue">{m.equipmentCategory || 'EQUIPMENT'}</b>
                   </td>
                   <td>
-                    <span style={{ fontWeight: 700, fontSize: '12.5px' }}>
+                    <span style={{ fontWeight: 400, fontSize: '12.5px' }}>
                       {Number(m.quantity).toLocaleString()}
                     </span>
                   </td>
