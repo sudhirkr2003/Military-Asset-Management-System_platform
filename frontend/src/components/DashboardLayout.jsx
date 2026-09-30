@@ -29,7 +29,9 @@ import {
   PanelLeft,
   ChevronDown,
   ShieldCheck,
-  Plus
+  Plus,
+  Layers,
+  Cpu
 } from 'lucide-react';
 
 export const DashboardLayout = () => {
@@ -447,6 +449,18 @@ export const DashboardLayout = () => {
           >
             <BarChart3 size={16} className="nav-icon" />
             <span className="nav-text">Reports & Exports</span>
+            <ChevronRight size={13} className="nav-chevron" />
+          </NavLink>
+
+          <NavLink
+            to="/architecture"
+            onClick={() => setMobileNavOpen(false)}
+            onMouseEnter={() => handlePrefetchRoute('/architecture')}
+            onFocus={() => handlePrefetchRoute('/architecture')}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <Cpu size={16} className="nav-icon" />
+            <span className="nav-text">System Architecture</span>
             <ChevronRight size={13} className="nav-chevron" />
           </NavLink>
 

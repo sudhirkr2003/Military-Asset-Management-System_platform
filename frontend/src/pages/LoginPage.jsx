@@ -137,37 +137,43 @@ export const LoginPage = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px solid #dce4d9', textAlign: 'center' }}>
+        <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px solid #dce4d9', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
           <a
-            href="/public-docs"
+            href="/public-architecture"
             style={{
-              color: '#1a6b3c',
+              color: '#047857',
               fontSize: '13px',
-              fontWeight: 600,
+              fontWeight: 700,
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '7px',
               padding: '8px 16px',
+              width: '100%',
               borderRadius: '8px',
-              background: 'rgba(26, 107, 60, 0.08)',
-              border: '1px solid rgba(26, 107, 60, 0.22)',
+              background: 'rgba(5, 150, 105, 0.1)',
+              border: '1px solid rgba(5, 150, 105, 0.3)',
               transition: 'all 0.2s ease',
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = 'rgba(26, 107, 60, 0.16)';
-              e.currentTarget.style.color = '#0e381d';
-              e.currentTarget.style.borderColor = '#1a6b3c';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'rgba(26, 107, 60, 0.08)';
-              e.currentTarget.style.color = '#1a6b3c';
-              e.currentTarget.style.borderColor = 'rgba(26, 107, 60, 0.22)';
+          >
+            <span>📐 View Interactive System Architecture Hub →</span>
+          </a>
+          <a
+            href="/public-docs"
+            style={{
+              color: '#475569',
+              fontSize: '12px',
+              fontWeight: 600,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
             }}
           >
-            <BookOpen size={15} style={{ color: '#1a6b3c' }} />
-            <span>View Public System Architecture & API Docs →</span>
+            <BookOpen size={14} />
+            <span>Public API Endpoints & Health Specs</span>
           </a>
         </div>
       </div>

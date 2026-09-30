@@ -16,6 +16,7 @@ import { PersonnelPage } from './pages/PersonnelPage';
 import { BasesPage } from './pages/BasesPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ArchitecturePage } from './pages/ArchitecturePage';
 import './App.css';
 
 function App() {
@@ -132,6 +133,10 @@ function App() {
             {/* Reports & Data Exports */}
             <Route path="/reports" element={<ReportsPage />} />
 
+            {/* Architecture & System Specification */}
+            <Route path="/architecture" element={<ArchitecturePage />} />
+            <Route path="/system-architecture" element={<ArchitecturePage />} />
+
             {/* Documentation & System Settings */}
             <Route path="/docs" element={<SettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -139,8 +144,9 @@ function App() {
             <Route path="/api-docs" element={<SettingsPage />} />
           </Route>
 
-          {/* Public Documentation Route without login */}
+          {/* Public Documentation & Architecture Routes without login */}
           <Route path="/public-docs" element={<SettingsPage />} />
+          <Route path="/public-architecture" element={<ArchitecturePage />} />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
