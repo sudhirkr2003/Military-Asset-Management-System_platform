@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import api, { apiCache } from '../services/api';
 import heroDaylight from '../assets/hero_daylight_command.jpg';
+import indianArmyHeroAction from '../assets/indian_army_hero_action.jpg';
 import indianArmyPortalBg from '../assets/indian_army_portal_bg.jpg';
 import {
   Send,
@@ -310,11 +311,11 @@ export const DashboardPage = () => {
 
   return (
     <>
-      {/* 1. Hero Section (Dignified Indian Army Defense Command Banner) */}
+      {/* 1. Hero Section (Action-Packed Indian Army Defense Operations Banner) */}
       <section
-        className="hero hero-light-banner hero-army-banner"
+        className="hero hero-army-banner"
         style={{
-          backgroundImage: `linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.90) 55%, rgba(255, 255, 255, 0.55) 100%), url(${indianArmyPortalBg})`,
+          backgroundImage: `linear-gradient(90deg, rgba(14, 38, 26, 0.95) 0%, rgba(14, 38, 26, 0.82) 42%, rgba(14, 38, 26, 0.20) 100%), url(${indianArmyHeroAction})`,
         }}
       >
         <div className="hero-content">
