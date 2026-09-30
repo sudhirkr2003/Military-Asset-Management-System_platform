@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import {
   ArrowRightLeft,
   Plus,
@@ -18,10 +18,19 @@ import {
 import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const TransfersPage = () => {
-  const [transfers, setTransfers] = useState([]);
-  const [bases, setBases] = useState([]);
-  const [equipmentTypes, setEquipmentTypes] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [transfers, setTransfers] = useState(() => {
+    const cached = apiCache.get('get:movements')?.data?.data;
+    return cached ? cached.filter((m) => m.movementType === 'TRANSFER_OUT' || m.movementType === 'TRANSFER_IN') : [];
+  });
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
+  const [equipmentTypes, setEquipmentTypes] = useState(() => {
+    return apiCache.get('get:equipment')?.data?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !apiCache.has('get:movements');
+  });
   const [formLoading, setFormLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [notification, setNotification] = useState({ type: '', message: '' });
@@ -44,11 +53,12 @@ export const TransfersPage = () => {
     remarks: ''
   });
 
-  const fetchLookups = useCallback(async () => {
+  const fetchLookups = useCallback(async (isManual = false) => {
     try {
+      const config = isManual ? { forceRefresh: true } : {};
       const [basesRes, equipRes] = await Promise.all([
-        api.get('/bases').catch(() => ({ data: { data: [] } })),
-        api.get('/equipment').catch(() => ({ data: { data: [] } }))
+        api.get('/bases', config).catch(() => ({ data: { data: [] } })),
+        api.get('/equipment', config).catch(() => ({ data: { data: [] } }))
       ]);
       if (basesRes.data?.data) setBases(basesRes.data.data);
       if (equipRes.data?.data) setEquipmentTypes(equipRes.data.data);
@@ -57,10 +67,13 @@ export const TransfersPage = () => {
     }
   }, []);
 
-  const fetchTransfers = useCallback(async () => {
-    setLoading(true);
+  const fetchTransfers = useCallback(async (isManualRefresh = false) => {
+    if (!isManualRefresh && transfers.length === 0) {
+      setLoading(true);
+    }
     try {
-      const res = await api.get('/movements');
+      const config = isManualRefresh ? { forceRefresh: true } : {};
+      const res = await api.get('/movements', config);
       if (res.data?.data) {
         const transferList = res.data.data.filter((m) =>
           m.movementType === 'TRANSFER_OUT' || m.movementType === 'TRANSFER_IN'
@@ -72,15 +85,27 @@ export const TransfersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [transfers.length]);
+
+  const handleRefreshAll = useCallback(() => {
+    fetchLookups(true);
+    fetchTransfers(true);
+  }, [fetchLookups, fetchTransfers]);
 
   useEffect(() => {
     fetchLookups();
     fetchTransfers();
 
-    const handleUpdate = () => fetchTransfers();
+    const handleUpdate = () => {
+      fetchLookups(true);
+      fetchTransfers(true);
+    };
     window.addEventListener('mams:movement_updated', handleUpdate);
-    return () => window.removeEventListener('mams:movement_updated', handleUpdate);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+      window.removeEventListener('mams:data_updated', handleUpdate);
+    };
   }, [fetchLookups, fetchTransfers]);
 
   const handleInputChange = useCallback((e) => {
@@ -222,7 +247,7 @@ export const TransfersPage = () => {
           >
             <Plus size={15} /> <span className="btn-text">{showAddForm ? 'Close Form' : 'Initiate New Transfer'}</span>
           </button>
-          <button className="btn-secondary" onClick={fetchTransfers} disabled={loading} title="Refresh Transfers">
+          <button className="btn-secondary" onClick={handleRefreshAll} disabled={loading} title="Refresh Transfers">
             <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
@@ -467,7 +492,7 @@ export const TransfersPage = () => {
           startTitle: 'From Date',
           endTitle: 'To Date'
         }}
-        onRefresh={fetchTransfers}
+        onRefresh={handleRefreshAll}
         loading={loading}
         refreshLabel="Refresh"
         hasActiveFilters={

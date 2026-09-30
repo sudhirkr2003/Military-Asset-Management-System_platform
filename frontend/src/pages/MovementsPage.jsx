@@ -1,24 +1,33 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import { RefreshCw, Building, Shield, Search, ArrowRightLeft, Calendar } from 'lucide-react';
 import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const MovementsPage = () => {
-  const [movements, setMovements] = useState([]);
-  const [bases, setBases] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [movements, setMovements] = useState(() => {
+    return apiCache.get('get:movements')?.data?.data || [];
+  });
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !apiCache.has('get:movements');
+  });
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedBase, setSelectedBase] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const fetchMovements = useCallback(async () => {
-    setLoading(true);
+  const fetchMovements = useCallback(async (isManualRefresh = false) => {
+    if (!isManualRefresh && movements.length === 0) {
+      setLoading(true);
+    }
     try {
+      const config = isManualRefresh ? { forceRefresh: true } : {};
       const [movRes, baseRes] = await Promise.all([
-        api.get('/movements'),
-        api.get('/bases').catch(() => ({ data: { data: [] } })),
+        api.get('/movements', config),
+        api.get('/bases', config).catch(() => ({ data: { data: [] } })),
       ]);
       if (movRes.data?.data) {
         setMovements(movRes.data.data);
@@ -31,14 +40,18 @@ export const MovementsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [movements.length]);
 
   useEffect(() => {
     fetchMovements();
 
-    const handleUpdate = () => fetchMovements();
+    const handleUpdate = () => fetchMovements(true);
     window.addEventListener('mams:movement_updated', handleUpdate);
-    return () => window.removeEventListener('mams:movement_updated', handleUpdate);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+      window.removeEventListener('mams:data_updated', handleUpdate);
+    };
   }, [fetchMovements]);
 
   const formatNumber = useCallback((val) => {
@@ -93,7 +106,7 @@ export const MovementsPage = () => {
           <small>Audit trail of all asset procurement, base-to-base transfers, personnel assignments, and ammunition expenditures.</small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchMovements} disabled={loading} title="Refresh Movements">
+          <button className="btn-secondary" onClick={() => fetchMovements(true)} disabled={loading} title="Refresh Movements">
             <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
@@ -135,7 +148,7 @@ export const MovementsPage = () => {
           startTitle: 'From Date',
           endTitle: 'To Date'
         }}
-        onRefresh={fetchMovements}
+        onRefresh={() => fetchMovements(true)}
         loading={loading}
         refreshLabel="Refresh"
         hasActiveFilters={

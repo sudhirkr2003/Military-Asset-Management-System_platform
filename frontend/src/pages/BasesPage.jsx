@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import {
   Building,
   Plus,
@@ -20,9 +20,15 @@ export const BasesPage = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
-  const [bases, setBases] = useState([]);
-  const [inventories, setInventories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
+  const [inventories, setInventories] = useState(() => {
+    return apiCache.get('get:inventory')?.data?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !apiCache.has('get:bases');
+  });
   const [searchTerm, setSearchTerm] = useState('');
 
   // Modal
@@ -37,12 +43,15 @@ export const BasesPage = () => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  const fetchBasesData = useCallback(async () => {
-    setLoading(true);
+  const fetchBasesData = useCallback(async (isManualRefresh = false) => {
+    if (!isManualRefresh && bases.length === 0) {
+      setLoading(true);
+    }
     try {
+      const config = isManualRefresh ? { forceRefresh: true } : {};
       const [basesRes, invRes] = await Promise.all([
-        api.get('/bases'),
-        api.get('/inventory').catch(() => ({ data: { data: [] } })),
+        api.get('/bases', config),
+        api.get('/inventory', config).catch(() => ({ data: { data: [] } })),
       ]);
 
       if (basesRes.data?.data) {
@@ -56,10 +65,18 @@ export const BasesPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [bases.length]);
 
   useEffect(() => {
     fetchBasesData();
+
+    const handleUpdate = () => fetchBasesData(true);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    window.addEventListener('mams:movement_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:data_updated', handleUpdate);
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+    };
   }, [fetchBasesData]);
 
   const handleOpenAdd = () => {
@@ -136,7 +153,7 @@ export const BasesPage = () => {
           </small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchBasesData} disabled={loading} title="Refresh Installations">
+          <button className="btn-secondary" onClick={() => fetchBasesData(true)} disabled={loading} title="Refresh Installations">
             <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
           {isAdmin && (
@@ -152,7 +169,7 @@ export const BasesPage = () => {
         searchPlaceholder="Search bases by name, code (e.g. ALP01), sector location, commander..."
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
-        onRefresh={fetchBasesData}
+        onRefresh={() => fetchBasesData(true)}
         loading={loading}
         refreshLabel="Refresh Bases"
         infoBadge={`${filteredBases.length} Active Installations`}

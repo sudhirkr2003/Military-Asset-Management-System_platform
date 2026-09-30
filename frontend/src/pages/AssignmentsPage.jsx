@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import {
   UserCheck,
   Flame,
@@ -23,10 +23,21 @@ export const AssignmentsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [movements, setMovements] = useState([]);
-  const [bases, setBases] = useState([]);
-  const [equipmentTypes, setEquipmentTypes] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [movements, setMovements] = useState(() => {
+    const cached = apiCache.get('get:movements')?.data?.data;
+    return cached
+      ? cached.filter((m) => ['ASSIGNMENT', 'RETURN', 'EXPENDITURE'].includes(m.movementType))
+      : [];
+  });
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
+  const [equipmentTypes, setEquipmentTypes] = useState(() => {
+    return apiCache.get('get:equipment')?.data?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !apiCache.has('get:movements');
+  });
   const [formLoading, setFormLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [actionTab, setActionTab] = useState('ASSIGN'); // 'ASSIGN', 'EXPEND', 'RETURN'
@@ -58,11 +69,12 @@ export const AssignmentsPage = () => {
     remarks: ''
   });
 
-  const fetchLookups = useCallback(async () => {
+  const fetchLookups = useCallback(async (isManual = false) => {
     try {
+      const config = isManual ? { forceRefresh: true } : {};
       const [basesRes, equipRes] = await Promise.all([
-        api.get('/bases').catch(() => ({ data: { data: [] } })),
-        api.get('/equipment').catch(() => ({ data: { data: [] } }))
+        api.get('/bases', config).catch(() => ({ data: { data: [] } })),
+        api.get('/equipment', config).catch(() => ({ data: { data: [] } }))
       ]);
       if (basesRes.data?.data) setBases(basesRes.data.data);
       if (equipRes.data?.data) setEquipmentTypes(equipRes.data.data);
@@ -71,10 +83,13 @@ export const AssignmentsPage = () => {
     }
   }, []);
 
-  const fetchMovements = useCallback(async () => {
-    setLoading(true);
+  const fetchMovements = useCallback(async (isManualRefresh = false) => {
+    if (!isManualRefresh && movements.length === 0) {
+      setLoading(true);
+    }
     try {
-      const res = await api.get('/movements');
+      const config = isManualRefresh ? { forceRefresh: true } : {};
+      const res = await api.get('/movements', config);
       if (res.data?.data) {
         const relevant = res.data.data.filter((m) =>
           ['ASSIGNMENT', 'RETURN', 'EXPENDITURE'].includes(m.movementType)
@@ -86,15 +101,27 @@ export const AssignmentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [movements.length]);
+
+  const handleRefreshAll = useCallback(() => {
+    fetchLookups(true);
+    fetchMovements(true);
+  }, [fetchLookups, fetchMovements]);
 
   useEffect(() => {
     fetchLookups();
     fetchMovements();
 
-    const handleUpdate = () => fetchMovements();
+    const handleUpdate = () => {
+      fetchLookups(true);
+      fetchMovements(true);
+    };
     window.addEventListener('mams:movement_updated', handleUpdate);
-    return () => window.removeEventListener('mams:movement_updated', handleUpdate);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+      window.removeEventListener('mams:data_updated', handleUpdate);
+    };
   }, [fetchLookups, fetchMovements]);
 
   // Sync state with location.pathname
@@ -297,7 +324,7 @@ export const AssignmentsPage = () => {
           >
             <Plus size={15} /> <span className="btn-text">{getAddButtonLabel()}</span>
           </button>
-          <button className="btn-secondary" onClick={fetchMovements} disabled={loading} title="Refresh Assignments">
+          <button className="btn-secondary" onClick={handleRefreshAll} disabled={loading} title="Refresh Assignments">
             <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
@@ -651,7 +678,7 @@ export const AssignmentsPage = () => {
           startTitle: 'Start Date',
           endTitle: 'End Date'
         }}
-        onRefresh={fetchMovements}
+        onRefresh={handleRefreshAll}
         loading={loading}
         refreshLabel="Refresh"
         hasActiveFilters={

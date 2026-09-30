@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import {
   RefreshCw,
   Building2,
@@ -16,19 +16,28 @@ import {
 import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const InventoryPage = () => {
-  const [liveInventory, setLiveInventory] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [liveInventory, setLiveInventory] = useState(() => {
+    return apiCache.get('get:inventory')?.data?.data || [];
+  });
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !apiCache.has('get:inventory');
+  });
   const [selectedBase, setSelectedBase] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [bases, setBases] = useState([]);
 
-  const fetchInventory = useCallback(async () => {
-    setLoading(true);
+  const fetchInventory = useCallback(async (isManualRefresh = false) => {
+    if (!isManualRefresh && liveInventory.length === 0) {
+      setLoading(true);
+    }
     try {
+      const config = isManualRefresh ? { forceRefresh: true } : {};
       const [invRes, basesRes] = await Promise.all([
-        api.get('/inventory').catch(() => ({ data: { data: [] } })),
-        api.get('/bases').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory', config).catch(() => ({ data: { data: [] } })),
+        api.get('/bases', config).catch(() => ({ data: { data: [] } })),
       ]);
 
       if (invRes.data?.data) {
@@ -42,14 +51,18 @@ export const InventoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [liveInventory.length]);
 
   useEffect(() => {
     fetchInventory();
 
-    const handleUpdate = () => fetchInventory();
+    const handleUpdate = () => fetchInventory(true);
+    window.addEventListener('mams:data_updated', handleUpdate);
     window.addEventListener('mams:movement_updated', handleUpdate);
-    return () => window.removeEventListener('mams:movement_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:data_updated', handleUpdate);
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+    };
   }, [fetchInventory]);
 
   const formatNumber = useCallback((val) => {
@@ -116,7 +129,7 @@ export const InventoryPage = () => {
           <small>Real-time armory telemetry, deployed troop assignments, expenditures, and verified closing stock.</small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchInventory} disabled={loading} title="Refresh Inventory">
+          <button className="btn-secondary" onClick={() => fetchInventory(true)} disabled={loading} title="Refresh Inventory">
             <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
         </div>
@@ -197,7 +210,7 @@ export const InventoryPage = () => {
             options: categories
           }
         ]}
-        onRefresh={fetchInventory}
+        onRefresh={() => fetchInventory(true)}
         loading={loading}
         refreshLabel="Refresh"
         hasActiveFilters={

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import {
   Plus,
   Search,
@@ -29,8 +29,12 @@ export const AssetsPage = () => {
   const canDelete = isAdmin;
   const hasAnyAction = canEdit || canDelete;
 
-  const [equipmentList, setEquipmentList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [equipmentList, setEquipmentList] = useState(() => {
+    return apiCache.get('get:equipment')?.data?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !apiCache.has('get:equipment');
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
@@ -56,10 +60,13 @@ export const AssetsPage = () => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  const fetchEquipment = useCallback(async () => {
-    setLoading(true);
+  const fetchEquipment = useCallback(async (isManualRefresh = false) => {
+    if (!isManualRefresh && equipmentList.length === 0) {
+      setLoading(true);
+    }
     try {
-      const res = await api.get('/equipment');
+      const config = isManualRefresh ? { forceRefresh: true } : {};
+      const res = await api.get('/equipment', config);
       if (res.data?.data) {
         setEquipmentList(res.data.data);
       }
@@ -68,10 +75,18 @@ export const AssetsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [equipmentList.length]);
 
   useEffect(() => {
     fetchEquipment();
+
+    const handleUpdate = () => fetchEquipment(true);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    window.addEventListener('mams:movement_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:data_updated', handleUpdate);
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+    };
   }, [fetchEquipment]);
 
   const categories = [
@@ -252,7 +267,7 @@ export const AssetsPage = () => {
           </small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchEquipment} disabled={loading} title="Refresh Assets">
+          <button className="btn-secondary" onClick={() => fetchEquipment(true)} disabled={loading} title="Refresh Assets">
             <RefreshCw size={13} className={`inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
           {canCreate && (
@@ -292,7 +307,7 @@ export const AssetsPage = () => {
             ]
           }
         ]}
-        onRefresh={fetchEquipment}
+        onRefresh={() => fetchEquipment(true)}
         loading={loading}
         refreshLabel="Refresh"
         hasActiveFilters={

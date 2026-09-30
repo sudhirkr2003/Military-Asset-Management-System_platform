@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import {
   FileText,
   Download,
@@ -19,7 +19,9 @@ import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const ReportsPage = () => {
   const [activeTab, setActiveTab] = useState('movements'); // 'movements' | 'expenditures' | 'inventory'
-  const [bases, setBases] = useState([]);
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
   const [loading, setLoading] = useState(false);
 
   // Filter States
@@ -33,9 +35,10 @@ export const ReportsPage = () => {
   const [expenditureReports, setExpenditureReports] = useState([]);
   const [inventoryReports, setInventoryReports] = useState([]);
 
-  const fetchBases = useCallback(async () => {
+  const fetchBases = useCallback(async (isManual = false) => {
     try {
-      const res = await api.get('/bases');
+      const config = isManual ? { forceRefresh: true } : {};
+      const res = await api.get('/bases', config);
       if (res.data?.data) {
         setBases(res.data.data);
       }
@@ -48,9 +51,12 @@ export const ReportsPage = () => {
     fetchBases();
   }, [fetchBases]);
 
-  const fetchReportData = useCallback(async () => {
-    setLoading(true);
+  const fetchReportData = useCallback(async (isManual = false) => {
+    if (isManual) {
+      setLoading(true);
+    }
     try {
+      const config = isManual ? { forceRefresh: true } : {};
       if (activeTab === 'movements') {
         const params = {};
         if (selectedBase !== 'ALL') params.baseId = selectedBase;
@@ -58,7 +64,7 @@ export const ReportsPage = () => {
         if (startDate) params.startDate = `${startDate}T00:00:00`;
         if (endDate) params.endDate = `${endDate}T23:59:59`;
 
-        const res = await api.get('/reports/movements', { params });
+        const res = await api.get('/reports/movements', { ...config, params });
         if (res.data?.data) {
           setMovementReports(res.data.data);
         }
@@ -68,7 +74,7 @@ export const ReportsPage = () => {
         if (startDate) params.startDate = `${startDate}T00:00:00`;
         if (endDate) params.endDate = `${endDate}T23:59:59`;
 
-        const res = await api.get('/reports/expenditures', { params });
+        const res = await api.get('/reports/expenditures', { ...config, params });
         if (res.data?.data) {
           setExpenditureReports(res.data.data);
         }
@@ -76,7 +82,7 @@ export const ReportsPage = () => {
         const params = {};
         if (selectedBase !== 'ALL') params.baseId = selectedBase;
 
-        const res = await api.get('/reports/inventory-audit', { params });
+        const res = await api.get('/reports/inventory-audit', { ...config, params });
         if (res.data?.data) {
           setInventoryReports(res.data.data);
         }
@@ -90,7 +96,19 @@ export const ReportsPage = () => {
 
   useEffect(() => {
     fetchReportData();
-  }, [fetchReportData]);
+
+    const handleUpdate = () => {
+      fetchBases(true);
+      fetchReportData(true);
+    };
+    window.addEventListener('mams:movement_updated', handleUpdate);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+      window.removeEventListener('mams:data_updated', handleUpdate);
+    };
+  }, [fetchReportData, fetchBases]);
+
 
   const handleExportCsv = async () => {
     try {
@@ -235,7 +253,7 @@ export const ReportsPage = () => {
               }
             : undefined
         }
-        onRefresh={fetchReportData}
+        onRefresh={() => fetchReportData(true)}
         loading={loading}
         refreshLabel="Update Report"
         hasActiveFilters={

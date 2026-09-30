@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { NavLink } from 'react-router-dom';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import {
   Users,
   UserPlus,
@@ -24,9 +24,15 @@ import UnifiedFilterToolbar from '../components/UnifiedFilterToolbar';
 
 export const PersonnelPage = () => {
   const { user } = useAuth();
-  const [personnelList, setPersonnelList] = useState([]);
-  const [bases, setBases] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [personnelList, setPersonnelList] = useState(() => {
+    return apiCache.get('get:personnel')?.data?.data || [];
+  });
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    return !apiCache.has('get:personnel');
+  });
 
   // If user is not ADMIN, show Access Denied / Clearance block
   if (user && user.role !== 'ADMIN') {
@@ -75,12 +81,15 @@ export const PersonnelPage = () => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  const fetchPersonnelAndBases = useCallback(async () => {
-    setLoading(true);
+  const fetchPersonnelAndBases = useCallback(async (isManual = false) => {
+    if (!isManual && personnelList.length === 0) {
+      setLoading(true);
+    }
     try {
+      const config = isManual ? { forceRefresh: true } : {};
       const [personnelRes, basesRes] = await Promise.all([
-        api.get('/personnel'),
-        api.get('/bases').catch(() => ({ data: { data: [] } })),
+        api.get('/personnel', config),
+        api.get('/bases', config).catch(() => ({ data: { data: [] } })),
       ]);
 
       if (personnelRes.data?.data) {
@@ -94,10 +103,14 @@ export const PersonnelPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [personnelList.length]);
 
   useEffect(() => {
     fetchPersonnelAndBases();
+
+    const handleUpdate = () => fetchPersonnelAndBases(true);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    return () => window.removeEventListener('mams:data_updated', handleUpdate);
   }, [fetchPersonnelAndBases]);
 
   const handleOpenAdd = () => {
@@ -262,7 +275,7 @@ export const PersonnelPage = () => {
           </small>
         </div>
         <div className="view-panel-actions">
-          <button className="btn-secondary" onClick={fetchPersonnelAndBases} disabled={loading} title="Refresh Personnel Roster">
+          <button className="btn-secondary" onClick={() => fetchPersonnelAndBases(true)} disabled={loading} title="Refresh Personnel Roster">
             <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${loading ? 'spin' : ''}`} /> <span className="btn-text">Refresh</span>
           </button>
           <button className="btn-primary" onClick={handleOpenAdd} title="Register Personnel">
@@ -370,7 +383,7 @@ export const PersonnelPage = () => {
             ]
           }
         ]}
-        onRefresh={fetchPersonnelAndBases}
+        onRefresh={() => fetchPersonnelAndBases(true)}
         loading={loading}
         refreshLabel="Refresh"
         hasActiveFilters={

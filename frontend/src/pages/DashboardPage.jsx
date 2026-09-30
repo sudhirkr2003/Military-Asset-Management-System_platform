@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
-import api from '../services/api';
+import api, { apiCache } from '../services/api';
 import heroDaylight from '../assets/hero_daylight_command.jpg';
 import {
   Send,
@@ -37,22 +37,31 @@ export const DashboardPage = () => {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   // Metadata Lists
-  const [bases, setBases] = useState([]);
-  const [equipmentList, setEquipmentList] = useState([]);
-
-  // Live KPI Summary State (Initial values all 0)
-  const [summary, setSummary] = useState({
-    openingBalance: 0,
-    purchases: 0,
-    transferIn: 0,
-    transferOut: 0,
-    netMovement: 0,
-    assigned: 0,
-    expended: 0,
-    closingBalance: 0,
+  const [bases, setBases] = useState(() => {
+    return apiCache.get('get:bases')?.data?.data || [];
+  });
+  const [equipmentList, setEquipmentList] = useState(() => {
+    return apiCache.get('get:equipment')?.data?.data || [];
   });
 
-  const [recentMovements, setRecentMovements] = useState([]);
+  // Live KPI Summary State (Initial values loaded from cache if present)
+  const [summary, setSummary] = useState(() => {
+    const cached = apiCache.get('get:dashboard/summary')?.data?.data;
+    return cached || {
+      openingBalance: 0,
+      purchases: 0,
+      transferIn: 0,
+      transferOut: 0,
+      netMovement: 0,
+      assigned: 0,
+      expended: 0,
+      closingBalance: 0,
+    };
+  });
+
+  const [recentMovements, setRecentMovements] = useState(() => {
+    return apiCache.get('get:dashboard/recent-movements')?.data?.data || [];
+  });
   const [categoryCounts, setCategoryCounts] = useState({
     VEHICLE: 0,
     WEAPON: 0,
@@ -67,11 +76,12 @@ export const DashboardPage = () => {
   const [showNetMovementModal, setShowNetMovementModal] = useState(false);
   const [netMovementFilter, setNetMovementFilter] = useState('ALL'); // 'ALL' | 'PURCHASE' | 'TRANSFER_IN' | 'TRANSFER_OUT'
 
-  const fetchMetadata = useCallback(async () => {
+  const fetchMetadata = useCallback(async (isManual = false) => {
     try {
+      const config = isManual ? { forceRefresh: true } : {};
       const [basesRes, eqRes] = await Promise.all([
-        api.get('/bases').catch(() => ({ data: { data: [] } })),
-        api.get('/equipment').catch(() => ({ data: { data: [] } })),
+        api.get('/bases', config).catch(() => ({ data: { data: [] } })),
+        api.get('/equipment', config).catch(() => ({ data: { data: [] } })),
       ]);
       if (basesRes.data?.data) setBases(basesRes.data.data);
       if (eqRes.data?.data) setEquipmentList(eqRes.data.data);
@@ -80,19 +90,24 @@ export const DashboardPage = () => {
     }
   }, []);
 
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
+  const fetchDashboardData = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setLoading(true);
+    }
     try {
       const params = {};
       if (selectedBase !== 'ALL') params.baseId = selectedBase;
       if (selectedEquipment !== 'ALL') params.equipmentTypeId = selectedEquipment;
       if (selectedPeriod !== 'all') params.period = selectedPeriod;
 
+      const config = isManualRefresh ? { forceRefresh: true, params } : { params };
+      const subConfig = isManualRefresh ? { forceRefresh: true } : {};
+
       const [summaryRes, movementsRes, catRes, invRes] = await Promise.all([
-        api.get('/dashboard/summary', { params }).catch(() => null),
-        api.get('/dashboard/recent-movements', { params: selectedBase !== 'ALL' ? { baseId: selectedBase } : {} }).catch(() => null),
-        api.get('/dashboard/category-distribution', { params: selectedBase !== 'ALL' ? { baseId: selectedBase } : {} }).catch(() => null),
-        api.get('/inventory').catch(() => null),
+        api.get('/dashboard/summary', config).catch(() => null),
+        api.get('/dashboard/recent-movements', { ...subConfig, params: selectedBase !== 'ALL' ? { baseId: selectedBase } : {} }).catch(() => null),
+        api.get('/dashboard/category-distribution', { ...subConfig, params: selectedBase !== 'ALL' ? { baseId: selectedBase } : {} }).catch(() => null),
+        api.get('/inventory', subConfig).catch(() => null),
       ]);
 
       // 1. KPI Summary
@@ -147,6 +162,11 @@ export const DashboardPage = () => {
     }
   }, [selectedBase, selectedEquipment, selectedPeriod, bases]);
 
+  const handleRefreshAll = useCallback(() => {
+    fetchMetadata(true);
+    fetchDashboardData(true);
+  }, [fetchMetadata, fetchDashboardData]);
+
   useEffect(() => {
     fetchMetadata();
   }, [fetchMetadata]);
@@ -154,10 +174,17 @@ export const DashboardPage = () => {
   useEffect(() => {
     fetchDashboardData();
 
-    const handleUpdate = () => fetchDashboardData();
+    const handleUpdate = () => {
+      fetchMetadata(true);
+      fetchDashboardData(true);
+    };
     window.addEventListener('mams:movement_updated', handleUpdate);
-    return () => window.removeEventListener('mams:movement_updated', handleUpdate);
-  }, [fetchDashboardData]);
+    window.addEventListener('mams:data_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('mams:movement_updated', handleUpdate);
+      window.removeEventListener('mams:data_updated', handleUpdate);
+    };
+  }, [fetchDashboardData, fetchMetadata]);
 
   const formatNumber = useCallback((val) => {
     return Number(val || 0).toLocaleString('en-US');
@@ -324,7 +351,7 @@ export const DashboardPage = () => {
 
           <button
             className="hero-refresh-btn desktop-refresh-btn"
-            onClick={fetchDashboardData}
+            onClick={handleRefreshAll}
             disabled={loading}
             title="Refresh Live Metrics"
           >

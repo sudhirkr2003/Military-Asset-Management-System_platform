@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { apiCache, generateCacheKey } from './apiCache';
 
 let rawBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').trim().replace(/\/+$/, '');
 if (!rawBaseUrl.endsWith('/api')) {
@@ -31,7 +32,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       if (error.response.status === 401) {
-        // 401 Unauthorized: token expired or invalid -> logout and redirect
+        // 401 Unauthorized: token expired or invalid -> logout, clear cache, redirect
+        apiCache.clearAll();
         localStorage.removeItem('mams_token');
         localStorage.removeItem('mams_user');
         if (window.location.pathname !== '/login') {
@@ -54,4 +56,64 @@ api.interceptors.response.use(
   }
 );
 
+// Wrap api.request with ultra-fast SWR / In-Memory caching & Single-Flight deduplication
+const originalRequest = api.request.bind(api);
+
+api.request = async function (configOrUrl, maybeConfig) {
+  let config = typeof configOrUrl === 'string'
+    ? { url: configOrUrl, ...(maybeConfig || {}) }
+    : { ...(configOrUrl || {}) };
+
+  const method = (config.method || 'get').toLowerCase();
+
+  // 1. If it's a GET request and caching is enabled (not bypassed by forceRefresh)
+  if (method === 'get' && !config.forceRefresh && !config.noCache) {
+    const cacheKey = generateCacheKey(config);
+    const cached = apiCache.get(cacheKey);
+
+    // Cache HIT -> Return immediately (0ms instant page render)
+    if (cached) {
+      return {
+        data: cached.data,
+        status: 200,
+        statusText: 'OK',
+        headers: { 'x-mams-cache': 'HIT' },
+        config,
+      };
+    }
+
+    // Single-Flight: If exact same request is already in-flight, await it to prevent duplicate network calls
+    if (apiCache.hasPending(cacheKey)) {
+      return apiCache.getPending(cacheKey);
+    }
+
+    const requestPromise = originalRequest(config)
+      .then((response) => {
+        if (response.status >= 200 && response.status < 300 && response.data) {
+          apiCache.set(cacheKey, response.data, config.cacheTtl);
+        }
+        return response;
+      })
+      .finally(() => {
+        apiCache.removePending(cacheKey);
+      });
+
+    apiCache.setPending(cacheKey, requestPromise);
+    return requestPromise;
+  }
+
+  // 2. Non-cached request (POST, PUT, DELETE, PATCH, or GET with forceRefresh)
+  const response = await originalRequest(config);
+
+  // Auto-evict cache and notify active views when data mutations happen
+  if (method !== 'get' && response.status >= 200 && response.status < 300) {
+    apiCache.invalidateForMutation(config.url);
+    window.dispatchEvent(new CustomEvent('mams:data_updated', { detail: { url: config.url } }));
+    window.dispatchEvent(new CustomEvent('mams:movement_updated'));
+  }
+
+  return response;
+};
+
+export { apiCache };
 export default api;
