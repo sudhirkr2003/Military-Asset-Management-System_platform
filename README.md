@@ -15,14 +15,17 @@
 1. [Platform Overview](#-platform-overview)
 2. [Key Capabilities & Features](#-key-capabilities--features)
 3. [Technology Stack](#-technology-stack)
-4. [Logistics & Balance Reconciliation Logic](#-logistics--balance-reconciliation-logic)
-5. [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
-6. [UI & UX Highlights](#-ui--ux-highlights)
-7. [Audit Trail & Accountability Standards](#-audit-trail--accountability-standards)
-8. [API Directory (27 Endpoints)](#-api-directory-27-endpoints)
-9. [Project Structure](#-project-structure)
-10. [Installation & Setup](#-installation--setup)
-11. [Automated Test Suite](#-automated-test-suite)
+4. [High-Performance Caching & SWR Engine](#-high-performance-caching--swr-engine)
+5. [Logistics & Balance Reconciliation Logic](#-logistics--balance-reconciliation-logic)
+6. [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
+7. [Default Demo Credentials](#-default-demo-credentials)
+8. [UI & UX Highlights](#-ui--ux-highlights)
+9. [Audit Trail & Accountability Standards](#-audit-trail--accountability-standards)
+10. [API Directory (28 Endpoints)](#-api-directory-28-endpoints)
+11. [Project Structure](#-project-structure)
+12. [Installation & Setup](#-installation--setup)
+13. [Automated Test Suite](#-automated-test-suite)
+14. [Production Keep-Alive & Monitoring](#-production-keep-alive--monitoring)
 
 ---
 
@@ -33,7 +36,7 @@ The **Military Asset Management System (MAMS)** is an enterprise defense logisti
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                      FRONTEND CLIENT (REACT 18)                        │
-│     Vite • Dual Theme (Dark/Light) • Fixed Layout • RBAC Dashboards    │
+│   Vite • Indian Army Crest • SWR Caching • Non-Blocking Auth • RBAC   │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ HTTPS / REST (JWT Bearer)
                                     ▼
@@ -61,6 +64,7 @@ The **Military Asset Management System (MAMS)** is an enterprise defense logisti
 - **Defense Asset Catalog:** Classification of assets into Durable Assets vs Consumable Ordnance with customizable units of measure.
 - **Immutable Audit Ledger:** Append-only ledger recording all chronological asset movements with authenticated officer signatures.
 - **In-App API Documentation & Test Runner:** OpenAPI 3.0 catalog with interactive in-app test execution scoped to user clearance levels.
+- **Health Check & Keep-Alive Gateway:** Public `/api/health` monitoring endpoint reporting database health, uptime, and system latency.
 
 ---
 
@@ -71,9 +75,21 @@ The **Military Asset Management System (MAMS)** is an enterprise defense logisti
 | **Backend Framework** | **Spring Boot 3.3.5 / Java 17** | Type-safe compiled backend architecture with transactional integrity. |
 | **Security Architecture** | **Spring Security 6 + Stateless JWT** | Token-based authentication with method-level authorization (`@PreAuthorize`). |
 | **Data Persistence** | **Spring Data JPA / Hibernate 6** | Declarative data access layer with strict relational consistency. |
-| **Frontend Platform** | **React 18 + Vite** | Modular, fast component architecture with responsive glassmorphic UI. |
-| **Styling & Design** | **Pure CSS + CSS Theme Variables** | High-contrast Light and Dark mode tokens, fixed sticky header & sidebar. |
+| **Frontend Platform** | **React 18 + Vite** | Modular, ultra-fast component architecture with responsive glassmorphic UI. |
+| **Caching Layer** | **Multi-Tier SWR (RAM + LocalStorage + SessionStorage)** | 0ms instant page transitions with background silent revalidation. |
+| **Styling & Design** | **Pure CSS + CSS Theme Variables** | Indian Army Defense theme, dual-ring rotating radar loaders, high-contrast typography. |
 | **API Specification** | **OpenAPI 3.0 / Swagger** | Interactive contract specification with real-time payload testing. |
+
+---
+
+## ⚡ High-Performance Caching & SWR Engine
+
+MAMS incorporates an advanced client-side caching engine (`apiCache.js` & `api.js`):
+1. **Multi-Tier Storage:** Caches responses in in-memory RAM `Map` (microsecond lookup) backed by `LocalStorage` & `SessionStorage` (survives tab switches and refreshes).
+2. **Stale-While-Revalidate (SWR):** When navigating between pages, cached data renders immediately (**0ms delay**), while an asynchronous background request fetches fresh data and updates the UI seamlessly if changes occurred.
+3. **Single-Flight Deduplication:** Combines concurrent identical requests into a single network execution to eliminate redundant backend queries.
+4. **Targeted Mutation Invalidation:** When an officer records a procurement, transfer, assignment, return, or expenditure, all affected endpoint caches are auto-purged immediately.
+5. **Bypass / Force Refresh (`↻`):** Explicitly clicking the refresh button bypasses cache, displays the circular military radar spinner, queries the live database, and re-primes the cache.
 
 ---
 
@@ -87,7 +103,7 @@ $$\text{Closing Balance} = \text{Opening Balance} + \text{Net Movement} - \text{
 
 $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Personnel}$$
 
-- Every procurement, transfer, issuance, and expenditure automatically reconciles live base inventory balances.
+- Every procurement, transfer, issuance, and expenditure automatically reconciles live base inventory balances with transactional ACID rollback safeguards.
 
 ---
 
@@ -106,18 +122,27 @@ $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Per
 | **Personnel Administration** | ✅ Full Access | ❌ Forbidden | ❌ Forbidden | ❌ Restricted |
 | **Audit Reports & Exports** | ✅ Full Audit Logs | ✅ Logistics Logs | ✅ Command Logs | ❌ Restricted |
 | **API Documentation Hub** | ✅ In-App Test Runner | ✅ In-App Test Runner | ✅ In-App Test Runner | ✅ Read-Only Specs |
+| **Health Check Endpoint** | ✅ Operational Status | ✅ Operational Status | ✅ Operational Status | ✅ Public Monitoring |
+
+---
+
+## 🔑 Default Demo Credentials
+
+| Role | Username | Password | Access Scope |
+| :--- | :--- | :--- | :--- |
+| **HQ Supreme Admin** | `admin` | `password` | Global Defense Headquarters — Full Access across all sectors & bases |
+| **Logistics Officer** | `logistics` | `password` | Base Logistical Depot — Procurements, inter-base transfers & asset catalog |
+| **Base Commander** | `commander` | `password` | Tactical Base Command — Troop weapon assignments, returns & munitions expenditure |
 
 ---
 
 ## 🎨 UI & UX Highlights
 
-- **Dual-Theme Engine (Light / Dark Mode):** Instant switching between high-contrast Military Slate Dark theme and Crisp Tactical Light theme.
-- **Fixed Non-Scrolling Header & Sidebar:** Pinned navigation header and fixed left sidebar with independent scrollable main content viewport.
-- **Collapsible Sidebar (Desktop & Tablet):** Desktop toggle button to expand/collapse sidebar navigation for maximized dashboard data visualization.
-- **Independent Profile Controls:**
-  - **Topbar Avatar (`CA`):** Compact header avatar triggering profile details, clearance level, theme switcher, and logout.
-  - **Sidebar Profile Card:** Standalone bottom profile card with quick user metadata and station credentials.
-- **Standardized Typography System:** Strict typographic hierarchy using font weights 700 (headers), 500 (subheaders), and 400 (body/labels).
+- **Authentic Indian Army Insignia:** Features the Indian Army Defense Crest with gold border, Commander officer profile avatar, and military color schemes.
+- **Dynamic IST Greeting Engine:** Automatically greets commanding officers according to Indian Standard Time (IST) (*Good Morning, Good Afternoon, Good Evening, Good Night*).
+- **Dual-Ring Radar Loading Spinner:** Custom circular military radar spinner indicating live backend queries during force refreshes.
+- **Non-Blocking Auth Initialization:** Cached credentials allow 0ms instantaneous route access without blocking for server cold-starts.
+- **High-Contrast Typography & Ergonomic Toolbar:** Compact search, filter dropdowns, date pickers, and reset/refresh buttons fitted on a single unified row.
 
 ---
 
@@ -129,26 +154,31 @@ $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Per
 
 ---
 
-## 📡 API Directory (27 Endpoints)
+## 📡 API Directory (28 Endpoints)
 
-### 1. Authentication (`/api/auth`)
+### 1. Health & Keep-Alive (`/api/health`)
+- `GET /api/health` — Public health check and uptime monitor *(Public)*
+- `GET /health` — Legacy keep-alive alias *(Public)*
+- `GET /api/public/health` — Public status inspection *(Public)*
+
+### 2. Authentication (`/api/auth`)
 - `POST /api/auth/login` — Authenticate user and receive JWT access token *(Public)*
 - `POST /api/auth/register` — Register a new officer account *(Admin only)*
 - `GET /api/auth/me` — Retrieve authenticated user profile *(Authenticated)*
 
-### 2. Dashboard Analytics (`/api/dashboard`)
+### 3. Dashboard Analytics (`/api/dashboard`)
 - `GET /api/dashboard/summary` — Retrieve KPI metrics (Opening, Purchases, Transfers, Net Movement, Assigned, Expended, Closing)
 - `GET /api/dashboard/recent-movements` — Retrieve recent activity stream
 - `GET /api/dashboard/category-distribution` — Retrieve stock distribution across asset categories
 
-### 3. Equipment & Assets Catalog (`/api/equipment`)
+### 4. Equipment & Assets Catalog (`/api/equipment`)
 - `GET /api/equipment` — List all defense equipment types
 - `GET /api/equipment/{id}` — Retrieve equipment specifications by ID
 - `POST /api/equipment` — Register a new asset type into catalog *(Admin, Logistics)*
 - `PUT /api/equipment/{id}` — Update equipment specifications *(Admin, Logistics)*
 - `DELETE /api/equipment/{id}` — Decommission an equipment type *(Admin only)*
 
-### 4. Movements & Logistics (`/api/movements`)
+### 5. Movements & Logistics (`/api/movements`)
 - `POST /api/movements/purchase` — Record asset procurement *(Admin, Logistics, Commander)*
 - `POST /api/movements/transfer` — Transfer assets between bases *(Admin, Logistics, Commander)*
 - `POST /api/movements/assign` — Assign weapons/gear to personnel *(Admin, Commander)*
@@ -157,24 +187,24 @@ $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Per
 - `GET /api/movements` — Query movement transaction ledger
 - `GET /api/movements/{id}` — Retrieve transaction details by ID
 
-### 5. Inventory Balances (`/api/inventory`)
+### 6. Inventory Balances (`/api/inventory`)
 - `GET /api/inventory` — Query live inventory balances across all installations
 - `GET /api/inventory/base/{baseId}` — Query inventory balances for a specific base
 - `GET /api/inventory/base/{baseId}/equipment/{equipmentTypeId}` — Query specific item balance at a base
 
-### 6. Personnel (`/api/personnel`)
+### 7. Personnel (`/api/personnel`)
 - `GET /api/personnel` — Query personnel registry *(Admin only)*
 - `GET /api/personnel/{id}` — Retrieve personnel record by ID *(Admin only)*
 - `POST /api/personnel` — Register new personnel record *(Admin only)*
 - `PUT /api/personnel/{id}` — Update personnel details *(Admin only)*
 - `DELETE /api/personnel/{id}` — Decommission personnel record *(Admin only)*
 
-### 7. Bases & Installations (`/api/bases`)
+### 8. Bases & Installations (`/api/bases`)
 - `GET /api/bases` — Query military installations
 - `GET /api/bases/{id}` — Retrieve base installation details by ID
 - `POST /api/bases` — Register a new base installation *(Admin only)*
 
-### 8. Reports & Audit Exports (`/api/reports`)
+### 9. Reports & Audit Exports (`/api/reports`)
 - `GET /api/reports/movements` — Generate logistical movement audit report
 - `GET /api/reports/inventory-audit` — Generate armory stock health audit report
 - `GET /api/reports/expenditures` — Generate munitions expenditure report
@@ -188,22 +218,23 @@ $$\text{Total Custody} = \text{Available in Base Armory} + \text{Assigned to Per
 Military Asset Management System/
 ├── backend/                                # Spring Boot 3.3.5 Application
 │   ├── src/main/java/com/mams/             # Application source code
-│   │   ├── config/                         # Security & CORS configuration
-│   │   ├── controller/                     # REST API Controllers (27 endpoints)
+│   │   ├── config/                         # Security, CORS & Swagger configuration
+│   │   ├── controller/                     # REST API Controllers (28 endpoints)
 │   │   ├── dto/                            # Data Transfer Objects
-│   │   ├── entity/                         # Domain Entities
-│   │   ├── repository/                     # Data Access Interfaces
-│   │   ├── security/                       # JWT Filters & Auth Providers
-│   │   └── service/                        # Business Logic Implementations
-│   └── src/test/java/com/mams/service/     # Unit & Integration Test Suite
+│   │   ├── entity/                         # Domain Entities & Ledger Models
+│   │   ├── repository/                     # Spring Data Access Interfaces
+│   │   ├── security/                       # Stateless JWT Filters & RBAC
+│   │   └── service/                        # Transactional Business Logic
+│   └── src/test/java/com/mams/             # Unit, Controller & Integration Test Suite
 │
 └── frontend/                               # React 18 / Vite Application
     └── src/
-        ├── components/                     # Layout, ProtectedRoute, Navigation
-        ├── context/                        # Auth & Theme State Management
-        ├── pages/                          # Application Views & Dashboards
-        ├── services/                       # API Client & Request Interceptors
-        ├── typography.css                  # Standardized Font Weight Tokens
+        ├── assets/                         # Indian Army Crest, Avatars, Tactical Backdrops
+        ├── components/                     # Unified Layout, LoadingSpinner, ProtectedRoute
+        ├── context/                        # Auth & Theme State Providers
+        ├── pages/                          # Operational Dashboards & Module Views
+        ├── services/                       # Multi-Tier API Client & SWR Engine (apiCache.js)
+        ├── typography.css                  # Standardized Typographic Hierarchy
         └── App.css                         # Tactical Defense Design System
 ```
 
@@ -223,6 +254,7 @@ mvn clean compile
 mvn spring-boot:run
 ```
 * Backend API: `http://localhost:8080`
+* Health Check: `http://localhost:8080/api/health`
 * Swagger UI Docs: `http://localhost:8080/swagger-ui/index.html`
 
 ### 3. Frontend Startup
@@ -238,9 +270,18 @@ npm run dev -- --port 5173
 
 ## 🧪 Automated Test Suite
 
-Run the automated service and reconciliation test suite:
+Run the automated service, controller, and reconciliation test suite:
 ```powershell
 cd backend
 mvn test
 ```
-* Includes test coverage for movement ledger transactions, stock deductions, and dashboard balance reconciliation.
+* Includes test coverage for movement ledger transactions, stock deductions, health checks, and dashboard balance reconciliation.
+
+---
+
+## 📡 Production Keep-Alive & Monitoring
+
+To prevent free-tier backend cold starts on Render, connect a free uptime ping service ([UptimeRobot](https://uptimerobot.com) or [Cron-job.org](https://cron-job.org)):
+- **Monitor Target URL:** `https://<your-backend-url>.onrender.com/api/health`
+- **Check Frequency:** Every 5–10 minutes
+- **Expected Status:** HTTP 200 `UP`
